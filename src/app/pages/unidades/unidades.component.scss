@@ -1,0 +1,327 @@
+.equipamentos-page {
+    background-color: #f8fafc;
+    padding: 2rem;
+    min-height: 100vh;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    font-family: 'Segoe UI', sans-serif;
+    color: #1e293b;
+  
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-pesquisa {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 250px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    
+      &:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      }
+    
+      &::placeholder {
+        color: #999;
+      }
+    }
+  
+    /* Filtros em bloco elegante */
+  .filtros {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  
+      select {
+        padding: 0.6rem;
+        font-size: 1rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background-color: #fff;
+        color: #1e293b;
+        outline: none;
+        min-width: 180px;
+  
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+      }
+  
+      .novo-btn {
+        padding: 0.6rem 1.2rem;
+        background-color: #10b981; /* verde igual ao componente de Empresas */
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+
+        i { margin-right: 6px; }
+
+        &:hover { background-color: #059669; }
+      }
+
+      /* Estilo consistente para ng-select */
+      ng-select, .ng-select { min-width: 220px; }
+      .ng-select .ng-select-container {
+        min-height: 40px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+      }
+      .ng-select.ng-select-focused .ng-select-container {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+      }
+    }
+  
+    /* Tabela refinada */
+    .tabela-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 1rem;
+      border-radius: 6px;
+      max-height: 60vh; /* habilita scroll vertical mantendo filtros visíveis */
+      overflow-y: auto;
+      position: relative;
+    }
+  
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      background-color: white;
+      min-width: 900px;
+
+      thead th {
+        position: sticky; /* cabeçalho fixo */
+        top: 0;
+        z-index: 2;
+      }
+
+      th, td {
+        text-align: center;
+        vertical-align: middle;
+        padding: 0.75rem 1rem;
+      }
+  
+      th {
+        background-color: #f1f5f9;
+        font-weight: 600;
+        color: #334155;
+      }
+  
+      td {
+        color: #475569;
+      }
+  
+      .estado-badge {
+        padding: 0.3rem 0.7rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-block;
+  
+        &.STOCK_BOM {
+          background-color: #dcfce7;
+          color: #15803d;
+        }
+  
+        &.STOCK_NOVO {
+          background-color: #dbeafe;
+          color: #1d4ed8;
+        }
+      }
+  
+      td.acoes button { margin: 0 4px; }
+
+      button {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        cursor: pointer;
+
+        i { pointer-events: none; }
+      }
+
+      /* Cores de ações iguais ao componente de Empresas */
+      .btn-edit { color: #16a34a; }
+      .btn-edit:hover { color: #15803d; }
+
+      .btn-delete { color: #dc2626; }
+      .btn-delete:hover { color: #b91c1c; }
+
+      .btn-view { color: #2563eb; }
+      .btn-view:hover { color: #1d4ed8; }
+
+      /* Zebra e hover */
+      tbody tr:nth-child(even) { background-color: #f9fafb; }
+      tbody tr:hover { background-color: #eef2ff; transition: background-color 0.2s ease; }
+    }
+  }
+  
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal {
+    background: #ffffff;
+    color: #1e293b;
+    padding: 2rem;
+    width: 500px;
+    max-width: 95vw;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    /* Removido efeito de desfoque */
+  
+    h2 {
+      margin-bottom: 1.5rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+      text-align: center;
+    }
+  
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+  
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+
+      /* Versão centralizada para formulário de Nova/Editar Unidade */
+      &.single {
+        grid-template-columns: 1fr; /* uma coluna */
+        justify-items: center;      /* centraliza o conteúdo da célula */
+
+        > .campo-nome {
+          width: 100%;
+          max-width: 320px;         /* reduzido para deixar mais estreito */
+        }
+      }
+
+      div {
+        display: flex;
+        flex-direction: column;
+
+        label {
+          font-weight: 500;
+          margin-bottom: 0.3rem;
+        }
+
+        input, select {
+          padding: 0.55rem 0.75rem;
+          font-size: 1rem;
+          border-radius: 6px;
+          border: 1px solid #cbd5e1;
+          background: #f8fafc;
+          color: #1e293b;
+          outline: none;
+
+          &:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+          }
+        }
+      }
+    }
+  
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+  
+      button {
+        padding: 0.6rem 1.4rem;
+        font-weight: 500;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+  
+        &:first-child {
+          background: #2563eb;
+          color: white;
+  
+          &:hover {
+            background: #1e40af;
+          }
+        }
+  
+        &:last-child {
+          background: #e5e7eb;
+          color: #1f2937;
+  
+          &:hover {
+            background: #d1d5db;
+          }
+        }
+      }
+    }
+  }
+  
+  /* Mensagens de erro nos campos */
+  .erro {
+    color: #b91c1c;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+  
+  input.ng-invalid.ng-touched,
+  select.ng-invalid.ng-touched {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+  }
+  
+  @media (max-width: 768px) {
+    .filtros {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .modal {
+      width: 95vw;
+      padding: 1rem;
+    }
+  
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    table {
+      font-size: 0.85rem;
+    }
+  
+    .estado-badge {
+      font-size: 0.75rem;
+    }
+  }

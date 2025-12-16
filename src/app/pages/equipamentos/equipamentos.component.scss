@@ -1,0 +1,505 @@
+.equipamentos-page {
+  background-color: #f8fafc;
+  padding: 2rem;
+  min-height: 100vh;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e293b;
+
+
+
+  /* Filtros em bloco elegante */
+  .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+    // Selects com estilo moderno e suave
+    select {
+      padding: 0.65rem 0.9rem;
+      font-size: 0.95rem;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background-color: #f9fafb;
+      color: #1f2937;
+      outline: none;
+      min-width: 200px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    select:hover {
+      background-color: #f3f4f6;
+      border-color: #cbd5e1;
+    }
+
+    select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      background-color: #ffffff;
+    }
+  }
+
+  // Tabela com scroll vertical e cabeçalho fixo
+  .tabela-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 6px;
+    max-height: 60vh; // scroll vertical
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .paginacao-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    
+    button {
+      padding: 0.5rem 1rem;
+      background: #22c55e;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: #16a34a;
+    }
+    span {
+      color: #334155;
+      font-size: 0.95rem;
+    }
+  }
+
+  .empty-state {
+    margin-top: 1rem;
+    padding: 1rem;
+    text-align: center;
+    color: #6b7280;
+    background-color: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(18, 18, 18, 0.05);
+    background-color: white;
+    min-width: 900px;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background-color: #f1f5f9;
+    }
+  }
+
+    th, td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 0.75rem 1rem;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: #091423;
+    }
+
+    td {
+      color: #435671;
+    }
+
+    .estado-badge {
+      padding: 0.3rem 0.7rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+
+      &.STOCK_BOM {
+        background-color: #dcfce7;
+        color: #15803d;
+      }
+
+      &.STOCK_NOVO {
+        background-color: #dbeafe;
+        color: #1d4ed8;
+      }
+    }
+
+    .acoes button {
+      background: none;
+      border: none;
+      color: #1e40af;
+      font-size: 1rem;
+      cursor: pointer;
+
+      &:hover {
+        color: #ef4444;
+      }
+
+      i {
+        pointer-events: none;
+      }
+    }
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 2rem;
+  width: 500px;
+  max-width: 95vw;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  /* Removido efeito de desfoque */
+
+  h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    div {
+      display: flex;
+      flex-direction: column;
+
+      label {
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+      }
+
+      input, select {
+        padding: 0.55rem 0.75rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #1e293b;
+        outline: none;
+        width: 100%;
+
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+          /* Sem efeito de transformação */
+        }
+      }
+    }
+  }
+
+  .modal.modern-form .form-grid div label {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.4rem;
+  }
+  .modal-figure {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  .modal-illustration {
+    width: 85%;
+    max-width: 480px;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    button {
+      padding: 0.6rem 1.4rem;
+      font-weight: 500;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+
+      &:first-child {
+        background: #2563eb;
+        color: white;
+
+        &:hover {
+          background: #1e40af;
+        }
+      }
+
+      &:last-child {
+        background: #e5e7eb;
+        color: #1f2937;
+
+        &:hover {
+          background: #d1d5db;
+        }
+      }
+    }
+  }
+}
+
+/* Mensagens de erro nos campos */
+.erro {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+@media (max-width: 768px) {
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal {
+    width: 95vw;
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    font-size: 0.85rem;
+  }
+
+  .estado-badge {
+    font-size: 0.75rem;
+  }
+}
+
+/* Estilos globais de tabela (fora do @media) */
+.equipamentos-page table {
+  /* Zebra horizontal suave nas linhas */
+  tbody tr {
+    transition: background 0.2s ease;
+  }
+  tbody tr:nth-child(odd) {
+    background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%);
+  }
+  tbody tr:nth-child(even) {
+    background: linear-gradient(90deg, #f9fafb 0%, #eef2f7 100%);
+  }
+  tbody tr:hover {
+    background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 100%);
+  }
+
+  /* Borda sutil entre linhas para definição */
+  tbody td {
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Ações: cores dos ícones */
+  td.acoes {
+    white-space: nowrap;
+  }
+  td.acoes button {
+    color: inherit; /* evita herdar o hover vermelho padrão */
+  }
+  td.acoes button:hover {
+    color: inherit; /* mantém cor do ícone no hover */
+  }
+
+  td.acoes .btn-edit i {
+    color: #16a34a; /* verde */
+  }
+  td.acoes .btn-edit:hover i {
+    color: #15803d; /* verde mais escuro */
+  }
+
+  td.acoes .btn-delete i {
+    color: #dc2626; /* vermelho */
+  }
+  td.acoes .btn-delete:hover i {
+    color: #b91c1c; /* vermelho mais escuro */
+  }
+
+  td.acoes .btn-view i {
+    color: #2563eb; /* azul */
+  }
+  td.acoes .btn-view:hover i {
+    color: #1d4ed8; /* azul mais escuro */
+  }
+}
+
+// Estilo dos filtros com ng-select para igualar ao visual da modal
+.equipamentos-page .filtros .ng-select {
+  min-width: 220px; /* garante largura mínima comparável à modal */
+}
+
+.equipamentos-page .filtros .ng-select .ng-select-container {
+  min-height: 40px; /* altura igual à da modal */
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.equipamentos-page .filtros .ng-select .ng-select-container:hover {
+  background-color: #f3f4f6;
+  border-color: #cbd5e1;
+}
+
+.equipamentos-page .filtros .ng-select .ng-select-container:focus-within {
+  border-color: #4f46e5; /* mesma cor de foco usada na modal */
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+  background-color: #ffffff;
+}
+
+.equipamentos-page .filtros .ng-select .ng-value,
+.equipamentos-page .filtros .ng-select .ng-placeholder {
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.equipamentos-page .filtros .ng-select .ng-arrow-wrapper,
+.equipamentos-page .filtros .ng-select .ng-clear-wrapper {
+  color: #64748b;
+}
+
+/* Botão "+ Novo Equipamento" verde */
+.equipamentos-page .filtros .novo-btn {
+  background-color: #22c55e; /* verde */
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+}
+
+.equipamentos-page .filtros .novo-btn:hover {
+  background-color: #16a34a; /* verde mais escuro no hover */
+}
+
+.equipamentos-page .filtros .novo-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
+}
+.modal.modern-form .form-grid div input,
+.modal.modern-form .form-grid div select {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background-color: #f9fafb;
+  color: #1f2937;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.modal.modern-form .form-grid div input:hover,
+.modal.modern-form .form-grid div select:hover {
+  background-color: #f3f4f6;
+  border-color: #cbd5e1;
+}
+.modal.modern-form .form-grid div input:focus,
+.modal.modern-form .form-grid div select:focus {
+  border-color: #4f46e5; /* indigo */
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  background-color: #ffffff;
+}
+.modal.modern-form .form-grid div select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2364758b' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-right: 2rem; /* espaço para seta */
+}
+.modal.modern-form .erro {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+/* Reintroduzir integração do ng-select na modal moderna */
+.modal.modern-form .ng-select.ng-select-single .ng-select-container {
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  min-height: 40px;
+}
+.modal.modern-form .ng-select.ng-select-single .ng-select-container:hover {
+  background-color: #f3f4f6;
+  border-color: #cbd5e1;
+}
+.modal.modern-form .ng-select.ng-select-single .ng-select-container:focus-within {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  background-color: #ffffff;
+}
+.modal.modern-form .ng-select .ng-value,
+.modal.modern-form .ng-select .ng-placeholder {
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+.modal.modern-form .ng-select .ng-clear-wrapper,
+.modal.modern-form .ng-select .ng-arrow-wrapper {
+  color: #64748b;
+}

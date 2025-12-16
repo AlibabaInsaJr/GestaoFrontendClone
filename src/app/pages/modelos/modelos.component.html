@@ -1,0 +1,81 @@
+<h1>Modelos</h1>
+<div class="equipamentos-page">
+
+  <!-- Filtros -->
+  <div class="filtros">
+    <ng-select [items]="modelos" bindLabel="nome" bindValue="id" [(ngModel)]="filtroModeloId" placeholder="Modelo" [clearable]="true"></ng-select>
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Novo Modelo
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Nome</th>
+          <th>Data de Registo</th>
+          <th>Marca</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let modelo of getModeloFiltrado()">
+          <td>{{ modelo.id }}</td>
+          <td>{{ modelo.nome }}</td>
+          <td>{{ modelo.dataRegisto }}</td>
+          <td>{{ getMarcaNome(modelo.marcaId) }}</td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(false, modelo)" aria-label="Editar">
+              <i class="fas fa-edit" aria-hidden="true"></i>
+            </button>
+            <button class="btn-delete" (click)="excluir(modelo.id)" aria-label="Apagar">
+              <i class="fas fa-trash-alt" aria-hidden="true"></i>
+            </button>
+            <button class="btn-view" [routerLink]="['/modelos', modelo.id]" aria-label="Visualizar">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+        <h2>{{ editando ? 'Editar' : 'Novo' }} Modelo</h2>
+        <div class="modal-banner">
+          <img src="assets/MarcasModelos.png" alt="Marcas e Modelos" />
+        </div>
+        <form [formGroup]="form" (ngSubmit)="salvar()">
+          <div class="form-grid">
+          <div>
+            <label>Nome: *</label>
+            <input type="text" formControlName="nome" />
+            <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Data de Registo: *</label>
+            <input type="date" formControlName="dataRegisto" />
+            <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Marca: *</label>
+            <ng-select [items]="marcas" bindLabel="nome" bindValue="id" formControlName="marcaId" placeholder="Selecione" [clearable]="true"></ng-select>
+            <small *ngIf="form.get('marcaId')?.touched && form.get('marcaId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

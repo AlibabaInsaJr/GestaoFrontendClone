@@ -1,0 +1,133 @@
+<div class="login-container">
+  <!-- Formas geométricas flutuantes -->
+  <div class="floating-shape"></div>
+  <div class="floating-shape"></div>
+  <div class="floating-shape"></div>
+  <div class="floating-shape"></div>
+  
+  <div class="login-wrapper">
+    
+    <!-- Header com Logo/Título -->
+    <div class="login-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <img [src]="logoSrc" (error)="onLogoError($event)" alt="Logo" class="logo-image">
+        </div>
+      </div>
+      <h1 class="system-title">Gestão de Activos</h1>
+      <p class="system-subtitle">Sistema de Controle e Monitoramento</p>
+    </div>
+
+    <!-- Card do Formulário -->
+    <div class="login-card">
+      <div class="card-header">
+        <h2 class="card-title">Fazer Login</h2>
+        <p class="card-description">Digite suas credenciais para acessar o sistema</p>
+      </div>
+
+      <div class="card-content">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          
+          <!-- Campo Username -->
+          <div class="form-group">
+            <label for="username" class="form-label">Nome de Usuário</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <input
+                id="username"
+                type="text"
+                formControlName="username"
+                placeholder="Digite seu nome de usuário"
+                class="form-input"
+                [class.error]="hasFieldError('username')"
+              />
+            </div>
+            <span class="error-message" *ngIf="getFieldError('username')">
+              {{ getFieldError('username') }}
+            </span>
+          </div>
+
+          <!-- Campo Senha -->
+          <div class="form-group">
+            <label for="password" class="form-label">Senha</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <circle cx="12" cy="16" r="1"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input
+                id="password"
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="Digite sua senha"
+                class="form-input password-input"
+                [class.error]="hasFieldError('password')"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+              >
+                <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <span class="error-message" *ngIf="getFieldError('password')">
+              {{ getFieldError('password') }}
+            </span>
+          </div>
+
+          <!-- Checkbox Lembrar-me -->
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                formControlName="rememberMe"
+                class="checkbox-input"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-text">Manter-me conectado</span>
+            </label>
+          </div>
+
+          <!-- Botão de Login -->
+          <button
+            type="submit"
+            class="login-button"
+            [disabled]="isLoading"
+          >
+            <span *ngIf="!isLoading" class="button-text">Entrar no Sistema</span>
+            <span *ngIf="isLoading" class="loading-content">
+              <svg class="spinner" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span>Autenticando...</span>
+            </span>
+          </button>
+        </form>
+
+        <!-- Footer do Card -->
+        <div class="card-footer">
+          <p class="security-text">Sistema seguro e protegido</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer da Página -->
+    <div class="page-footer">
+      <p class="copyright">© 2025 Sistema de Gestão de Ativos INCM. Todos os direitos reservados (DESI).</p>
+    </div>
+  </div>
+</div>

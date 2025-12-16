@@ -1,0 +1,180 @@
+.detalhes-devolucao-page {
+  /* Paleta e layout consistentes com Detalhes da Reparação */
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --text-900: #0f172a;
+  --text-700: #334155;
+  --muted: #64748b;
+  --primary: #4f46e5;
+  --primary-700: #4338ca;
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+  background-color: var(--bg);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  font-family: 'Segoe UI', sans-serif;
+
+  .page-header {
+    margin-bottom: 1.25rem;
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-900);
+      i { color: var(--primary); }
+    }
+  }
+
+  /* Cards resumidos */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    transition: transform .2s ease, box-shadow .2s ease;
+    &:hover { transform: translateY(-2px); }
+
+    .card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #edf2f7;
+      h2 {
+        display: flex; align-items: center; gap: .5rem;
+        font-size: 1.2rem; font-weight: 700; color: var(--text-900);
+        i { color: var(--primary); }
+      }
+    }
+
+    .card-content {
+      padding: 1rem 1.25rem;
+      p { font-size: .98rem; margin: .35rem 0; color: var(--text-700); }
+      p span:first-child {
+        font-weight: 600; color: var(--text-900);
+        margin-right: .5rem; display: inline-block; min-width: 150px;
+      }
+    }
+  }
+
+  /* Bloco de tabela */
+  .table-block {
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 1rem;
+
+    .block-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #edf2f7;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap;
+      h2 { display: flex; align-items: center; gap: .5rem; font-size: 1.2rem; font-weight: 700; color: var(--text-900); }
+      h2 i { color: var(--primary); }
+    }
+
+    .table-wrapper { max-height: 480px; overflow: auto; }
+    .table-wrapper::-webkit-scrollbar { height: 8px; width: 8px; }
+    .table-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      position: sticky; top: 0;
+      background: linear-gradient(180deg, #eef2ff, #e0e7ff);
+      color: #0b1324; text-align: left; padding: .8rem 1rem; font-weight: 700; border-bottom: 1px solid #e5e7eb;
+    }
+    thead th i { margin-right: .5rem; color: var(--primary); }
+    tbody td { padding: .75rem 1rem; border-top: 1px solid #edf2f7; color: var(--text-700); vertical-align: middle; font-size: .95rem; }
+    tbody tr:nth-child(even) { background-color: #fafbff; }
+    tbody tr:hover { background-color: #f0f4ff; }
+
+    .estado-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: .25rem .6rem; border-radius: 9999px; font-weight: 600; font-size: .9rem;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.04) inset;
+    }
+    .estado-badge.stock-bom { background-color: #dcfce7; color: #166534; }
+    .estado-badge.alocado { background-color: #fef3c7; color: #92400e; }
+
+    .sem-historico {
+      color: var(--muted); background: #f8fafc; padding: .9rem 1rem;
+      border: 1px dashed #cbd5e1; margin: 1rem; border-radius: 8px;
+    }
+  }
+
+  .detalhes-actions { margin-top: 1rem; text-align: right; }
+  .detalhes-actions .actions-group { display: inline-flex; gap: .6rem; }
+  .detalhes-actions .btn-voltar {
+    background-color: var(--primary); color: #fff; padding: .65rem 1.2rem;
+    border: none; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow);
+    display: inline-flex; align-items: center; gap: 8px; }
+  .detalhes-actions .btn-voltar:hover { background-color: var(--primary-700); }
+
+  .detalhes-actions .btn-gerar {
+    background-color: #0ea5e9; color: #fff; padding: .65rem 1.2rem;
+    border: none; border-radius: 8px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow);
+    display: inline-flex; align-items: center; gap: 8px; }
+  .detalhes-actions .btn-gerar:hover { background-color: #0284c7; }
+
+  @media (max-width: 640px) {
+    .cards-grid { grid-template-columns: 1fr; }
+    .table-block .table-wrapper { max-height: 360px; }
+  }
+}
+
+/* Template de impressão da Guia com background */
+.guia-print { display: none; }
+.guia-print .guia-page {
+  position: relative;
+  width: 210mm; height: 297mm; /* A4 */
+  margin: 0 auto;
+  background-size: cover; background-repeat: no-repeat; background-position: top left;
+  box-shadow: var(--shadow);
+}
+.guia-print .guia-page:first-child { background-image: url('/assets/1.1.png'); }
+.guia-print .guia-page:not(:first-child) { background-image: url('/assets/2.1.png'); }
+
+.guia-print .guia-page .content-zone {
+  position: absolute; inset: 0;
+  /* Zona segura: abaixo do cabeçalho e acima do rodapé da imagem */
+  padding: 40mm 18mm 20mm 18mm; /* top right bottom left */
+  font-family: 'Segoe UI', sans-serif; color: #0f172a;
+}
+
+.guia-print .titulo { font-weight: 800; text-decoration: underline; font-size: 16pt; margin-bottom: 6mm; }
+.guia-print .secao { margin-bottom: 6mm; }
+.guia-print .secao-titulo { font-weight: 700; font-size: 12pt; margin-bottom: 3mm; }
+.guia-print .grid-dados { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 10mm; font-size: 11pt; }
+
+.guia-print .tabela-equipamentos { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+.guia-print .tabela-equipamentos th, .guia-print .tabela-equipamentos td { border: 1px solid #d1d5db; padding: 3mm; }
+.guia-print .tabela-equipamentos thead th { background: #eef2ff; }
+
+.guia-print .anotacoes .titulo { font-weight: 700; font-size: 12pt; margin-bottom: 2mm; }
+.guia-print .anotacoes .linha { border-bottom: 1px solid #9ca3af; height: 8mm; margin-bottom: 2mm; }
+
+.guia-print .paragrafo { font-size: 11pt; margin-bottom: 3mm; }
+.guia-print .lista { margin: 0; padding-left: 6mm; font-size: 11pt; }
+.guia-print .lista li { margin-bottom: 2mm; }
+
+.guia-print .assinaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; margin-top: 8mm; }
+.guia-print .assinaturas .linha-assinatura { border-bottom: 1.6px solid #0f172a; height: 12mm; margin-bottom: 2mm; }
+.guia-print .assinaturas .legenda { font-size: 10pt; color: #334155; }
+
+/* Regras de impressão */
+@media print {
+  /* Esconde toda a UI regular e mostra apenas a guia-print */
+  .detalhes-devolucao-page > *:not(.guia-print) { display: none !important; }
+  .guia-print { display: block !important; }
+  .guia-print .guia-page { page-break-after: always; }
+  .guia-print .guia-page:last-child { page-break-after: avoid; }
+
+  @page { size: A4; margin: 0; }
+}

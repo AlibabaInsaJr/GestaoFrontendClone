@@ -1,0 +1,555 @@
+.detalhes-aquisicao-page {
+  /* Paleta e base visual (igual Detalhes de Modelo) */
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --text-900: #0f172a;
+  --text-700: #334155;
+  --muted: #64748b;
+  --primary: #4f46e5;
+  --primary-700: #4338ca;
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  background-color: var(--bg);
+  padding: 2rem;
+  border-radius: 10px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e293b;
+
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    margin: 2rem 0 1rem;
+    font-weight: 600;
+  }
+
+  .info-card {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .info-bloco {
+    flex: 1 1 300px;
+
+    p {
+      margin-bottom: 1rem;
+      font-size: 1rem;
+
+      span:first-child {
+        font-weight: 600;
+        display: inline-block;
+        min-width: 140px;
+      }
+    }
+  }
+
+  .tabela-wrapper {
+    overflow-x: auto;
+    border-radius: 6px;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    td {
+      color: #475569;
+    }
+  }
+
+  .mensagem-vazia {
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 1rem;
+  }
+
+  .equipamentos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2rem 0 1rem;
+
+    h2 {
+      margin: 0;
+    }
+
+    .adicionar-btn {
+      padding: 0.6rem 1.2rem;
+      background-color: #22c55e; /* verde */
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+
+      &:hover {
+        background-color: #16a34a; /* verde mais escuro no hover */
+      }
+
+      i {
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  .detalhes-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    .voltar-btn {
+      background-color: #dc2626;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+
+      &:hover {
+        background-color: #b91c1c;
+      }
+    }
+
+    .adicionar-btn {
+      padding: 0.6rem 1.2rem;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      &:hover {
+        background-color: #1d4ed8;
+      }
+
+      i {
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 2rem;
+  width: 500px;
+  max-width: 95vw;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  /* Removido efeito de desfoque */
+
+  h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    div {
+      display: flex;
+      flex-direction: column;
+
+      label {
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+      }
+
+      input, select {
+        padding: 0.55rem 0.75rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #1e293b;
+        outline: none;
+
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+      }
+    }
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    button {
+      padding: 0.6rem 1.4rem;
+      font-weight: 500;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+
+      &:first-child {
+        background: #2563eb;
+        color: white;
+
+        &:hover {
+          background: #1e40af;
+        }
+
+        &:disabled {
+          background: #94a3b8;
+          cursor: not-allowed;
+        }
+      }
+
+      &:last-child {
+        background: #e5e7eb;
+        color: #1f2937;
+
+        &:hover {
+          background: #d1d5db;
+        }
+      }
+    }
+  }
+}
+
+/* Mensagens de erro nos campos */
+.erro {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+@media (max-width: 768px) {
+  .equipamentos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .modal {
+    width: 95vw;
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cabeçalho */
+.page-header {
+  margin-bottom: 1.25rem;
+
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-900);
+
+    i { color: var(--primary); }
+  }
+}
+
+/* Cartões (resumo) */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  transition: transform .2s ease, box-shadow .2s ease;
+
+  &:hover { transform: translateY(-2px); }
+
+  .card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #edf2f7;
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-900);
+
+      i { color: var(--primary); }
+    }
+  }
+
+  .card-content {
+    padding: 1rem 1.25rem;
+
+    p {
+      font-size: 0.98rem;
+      margin: 0.35rem 0;
+      color: var(--text-700);
+
+      span:first-child {
+        font-weight: 600;
+        color: var(--text-900);
+        margin-right: 0.5rem;
+        display: inline-block;
+        min-width: 130px;
+      }
+    }
+  }
+}
+
+/* Bloco de tabela (Equipamentos associados) */
+.table-block {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+
+  .block-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #edf2f7;
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-900);
+
+      i { color: var(--primary); }
+    }
+  }
+
+  .table-wrapper {
+    max-height: 480px;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    &::-webkit-scrollbar { height: 8px; width: 8px; }
+    &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(180deg, #eef2ff, #e0e7ff);
+    color: #0b1324;
+    text-align: left;
+    padding: 0.8rem 1rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 1;
+
+    i { margin-right: 0.5rem; color: var(--primary); }
+  }
+
+  tbody td {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #edf2f7;
+    color: var(--text-700);
+    vertical-align: middle;
+    font-size: 0.95rem;
+  }
+
+  tbody tr:nth-child(even) { background-color: #fafbff; }
+  tbody tr:hover { background-color: #f0f4ff; }
+
+  .mensagem-vazia {
+    color: var(--muted);
+    background: #f8fafc;
+    padding: 0.9rem 1rem;
+    border: 1px dashed #cbd5e1;
+    margin: 1rem;
+    border-radius: 8px;
+  }
+}
+
+/* Ações */
+.detalhes-actions {
+  margin-top: 1rem;
+  text-align: right;
+
+  .btn-voltar {
+    background-color: var(--primary);
+    color: #ffffff;
+    padding: 0.65rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    &:hover { background-color: var(--primary-700); }
+    &:focus { outline: 2px solid rgba(79, 70, 229, 0.25); outline-offset: 2px; }
+  }
+}
+
+@media (max-width: 640px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .table-block .table-wrapper { max-height: 360px; }
+}
+
+.modal.modern-form .form-grid div label {
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.4rem;
+}
+.modal-figure {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.modal-illustration {
+  width: 85%;
+  max-width: 480px;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+.modal.modern-form .form-grid div input,
+.modal.modern-form .form-grid div select {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background-color: #f9fafb;
+  color: #1f2937;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.modal.modern-form .form-grid div input:hover,
+.modal.modern-form .form-grid div select:hover {
+  background-color: #f3f4f6;
+  border-color: #cbd5e1;
+}
+.modal.modern-form .form-grid div input:focus,
+.modal.modern-form .form-grid div select:focus {
+  border-color: #4f46e5; /* indigo */
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  background-color: #ffffff;
+}
+.modal.modern-form .form-grid div select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2364758b' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-right: 2rem; /* espaço para seta */
+}
+.modal.modern-form .erro {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+/* Integração do ng-select na modal moderna */
+.modal.modern-form .ng-select.ng-select-single .ng-select-container {
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  min-height: 40px;
+}
+.modal.modern-form .ng-select.ng-select-single .ng-select-container:hover {
+  background-color: #f3f4f6;
+  border-color: #cbd5e1;
+}
+.modal.modern-form .ng-select.ng-select-single .ng-select-container:focus-within {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  background-color: #ffffff;
+}
+.modal.modern-form .ng-select .ng-value,
+.modal.modern-form .ng-select .ng-placeholder {
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+.modal.modern-form .ng-select .ng-clear-wrapper,
+.modal.modern-form .ng-select .ng-arrow-wrapper {
+  color: #64748b;
+}
+
+/* reforçar cor azul do botão '+ Adicionar' dentro da página de detalhes da aquisição */
+.detalhes-aquisicao-page .detalhes-actions .adicionar-btn {
+  background-color: #22c55e; /* verde */
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+}
+.detalhes-aquisicao-page .detalhes-actions .adicionar-btn:hover {
+  background-color: #16a34a; /* verde mais escuro */
+}

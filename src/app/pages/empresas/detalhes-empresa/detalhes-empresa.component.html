@@ -1,0 +1,70 @@
+<div class="detalhes-empresa-page">
+  <!-- Cabeçalho da página, igual ao Detalhes do Utilizador -->
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-building"></i>
+      Detalhes da Empresa
+    </h1>
+  </div>
+
+  <!-- Cartão de resumo -->
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-id-card"></i> Resumo da Empresa</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID:</span> {{ empresa?.id || '---' }}</p>
+        <p><span>Designação:</span> {{ empresa?.designacao || '---' }}</p>
+        <p><span>Descrição:</span> {{ empresa?.descricao || '---' }}</p>
+        <p><span>Telefone:</span> {{ empresa?.telefone || '---' }}</p>
+        <p><span>Endereço:</span> {{ empresa?.endereco || '---' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bloco de tabela de aquisições -->
+  <div class="table-block" *ngIf="aquisicoes && aquisicoes.length > 0; else semAquisicoes">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-file-contract"></i> Aquisições feitas por esta empresa</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="table table-aquisicoes">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-hashtag"></i> ID</th>
+            <th><i class="fa-solid fa-file-alt"></i> Descrição</th>
+            <th><i class="fa-solid fa-calendar-day"></i> Data da Aquisição</th>
+            <th><i class="fa-solid fa-list-ol"></i> Nº do Concurso</th>
+            <th><i class="fa-solid fa-file"></i> Guia</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let aq of aquisicoes">
+            <td>{{ aq.id }}</td>
+            <td>{{ aq.descricao }}</td>
+            <td>{{ aq.dataAquisicao | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ aq.numeroConcurso }}</td>
+            <td>
+              <ng-container *ngIf="aq.pathContracto; else semGuia">
+                <a [href]="toFileUrl(aq.pathContracto)" target="_blank">Ver guia</a>
+              </ng-container>
+              <ng-template #semGuia>—</ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semAquisicoes>
+    <p class="mensagem-vazia">Nenhuma aquisição registrada para esta empresa.</p>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()">
+      <i class="fa-solid fa-arrow-left"></i>
+      Voltar
+    </button>
+  </div>
+</div>

@@ -1,0 +1,119 @@
+<div class="detalhes-aquisicao-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-file-contract"></i>
+      Detalhes da Aquisição
+    </h1>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Resumo da Aquisição</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID:</span> {{ aquisicao?.id }}</p>
+        <p><span>Descrição:</span> {{ aquisicao?.descricao }}</p>
+        <p><span>Data da Aquisição:</span> {{ aquisicao?.dataAquisicao | date: 'dd/MM/yyyy' }}</p>
+        <p><span>Nº do Concurso:</span> {{ aquisicao?.numeroConcurso }}</p>
+        <p><span>Contrato:</span>
+          <ng-container *ngIf="aquisicao?.pathContracto; else semContrato">
+            <a href="javascript:void(0)" (click)="downloadContrato()">Ver contrato</a>
+          </ng-container>
+          <ng-template #semContrato>—</ng-template>
+        </p>
+        <p><span>Empresa:</span> {{ getEmpresaNome(aquisicao?.empresaId) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-block" *ngIf="equipamentos.length > 0; else semEquipamentos">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-screwdriver-wrench"></i> Equipamentos Associados</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="table table-equipamentos">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-hashtag"></i> ID</th>
+            <th><i class="fa-solid fa-barcode"></i> Nº Série</th>
+            <th><i class="fa-solid fa-calendar-days"></i> Data Registo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let eq of equipamentos">
+            <td>{{ eq.id }}</td>
+            <td>{{ eq.numeroSerie }}</td>
+            <td>{{ eq.dataRegisto | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semEquipamentos>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-screwdriver-wrench"></i> Equipamentos Associados</h2>
+      </div>
+      <p class="mensagem-vazia">Nenhum equipamento associado a esta aquisição.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+    <button class="adicionar-btn" (click)="abrirModalEquipamento()">
+      <i class="fas fa-plus"></i> Adicionar
+    </button>
+  </div>
+
+  <!-- Modal para adicionar equipamento -->
+  <div class="modal-overlay" *ngIf="showModalEquipamento">
+    <div class="modal modern-form">
+      <h2>Novo Equipamento</h2>
+
+      <div class="modal-figure">
+        <img src="assets/NovoEquipameno.png" alt="Ilustração Novo Equipamento" class="modal-illustration" />
+      </div>
+
+      <form [formGroup]="formEquipamento" (ngSubmit)="salvarEquipamento()">
+        <div class="form-grid">
+          <div>
+            <label>Modelo:</label>
+            <ng-select [items]="modelos" bindLabel="nome" bindValue="id" formControlName="modelo_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="formEquipamento.get('modelo_id')?.touched && formEquipamento.get('modelo_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Tipo:</label>
+            <ng-select [items]="tipos" bindLabel="nome" bindValue="id" formControlName="tipoEquipamento_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="formEquipamento.get('tipoEquipamento_id')?.touched && formEquipamento.get('tipoEquipamento_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Aquisição:</label>
+            <ng-select [items]="[aquisicao]" bindLabel="descricao" bindValue="id" formControlName="aquisicao_id" placeholder="Selecione" [disabled]="true"></ng-select>
+            <small *ngIf="formEquipamento.get('aquisicao_id')?.touched && formEquipamento.get('aquisicao_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Número de Série:</label>
+            <input type="text" formControlName="numeroSerie" />
+            <small *ngIf="formEquipamento.get('numeroSerie')?.touched && formEquipamento.get('numeroSerie')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Data de Registo:</label>
+            <input type="date" formControlName="dataRegisto" />
+            <small *ngIf="formEquipamento.get('dataRegisto')?.touched && formEquipamento.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="formEquipamento.invalid">Salvar</button>
+          <button type="button" (click)="fecharModalEquipamento()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

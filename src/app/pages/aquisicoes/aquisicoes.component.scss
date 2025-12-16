@@ -1,0 +1,378 @@
+.equipamentos-page {
+  background-color: #f8fafc;
+  padding: 2rem;
+  min-height: 100vh;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e293b;
+
+  
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Filtros em bloco elegante */
+  .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+    select {
+      padding: 0.6rem;
+      font-size: 1rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background-color: #fff;
+      color: #1e293b;
+      outline: none;
+      min-width: 180px;
+
+      &:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+      }
+    }
+
+    .novo-btn {
+      padding: 0.6rem 1.2rem;
+      background-color: #0fcb28;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+
+      i {
+        margin-right: 6px;
+      }
+
+      &:hover {
+        background-color: #059669;
+      }
+    }
+  }
+
+  /* Tabela refinada */
+  .tabela-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: white;
+    min-width: 900px;
+
+    th, td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 0.75rem 1rem;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    td {
+      color: #475569;
+    }
+
+    .estado-badge {
+      padding: 0.3rem 0.7rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+
+      &.STOCK_BOM {
+        background-color: #dcfce7;
+        color: #15803d;
+      }
+
+      &.STOCK_NOVO {
+        background-color: #dbeafe;
+        color: #1d4ed8;
+      }
+    }
+
+    button {
+      background: none;
+      border: none;
+      color: #1e40af;
+      font-size: 1rem;
+      cursor: pointer;
+
+      &:hover {
+        color: #ef4444;
+      }
+
+      i {
+        pointer-events: none;
+      }
+    }
+  }
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 2rem;
+  width: 500px;
+  max-width: 95vw;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  /* Removido efeito de desfoque */
+
+  h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    div {
+      display: flex;
+      flex-direction: column;
+      min-height: 70px;
+
+      label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #374151;
+        font-size: 0.95rem;
+        line-height: 1.2;
+      }
+
+      input, select {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #1e293b;
+        outline: none;
+        height: 48px;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+          background: #fafafa;
+        }
+
+        &::placeholder {
+          color: #9ca3af;
+        }
+      }
+
+      // Garantir que o componente de upload tenha a mesma altura
+      app-file-upload {
+        height: 48px;
+      }
+
+      small.erro {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: block;
+      }
+    }
+
+    .modelos-section {
+      grid-column: 1 / -1;
+      
+      .modelos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        
+        .modelo-checkbox {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          background: #f8fafc;
+          
+          input[type="checkbox"] {
+            margin: 0;
+            padding: 0;
+            width: auto;
+            height: auto;
+          }
+          
+          label {
+            margin: 0;
+            font-weight: 400;
+            cursor: pointer;
+            flex: 1;
+          }
+          
+          &:hover {
+            background: #f1f5f9;
+          }
+        }
+      }
+    }
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    button {
+      padding: 0.6rem 1.4rem;
+      font-weight: 500;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+
+      &:first-child {
+        background: #2563eb;
+        color: white;
+
+        &:hover {
+          background: #1e40af;
+        }
+      }
+
+      &:last-child {
+        background: #e5e7eb;
+        color: #1f2937;
+
+        &:hover {
+          background: #d1d5db;
+        }
+      }
+    }
+  }
+}
+
+/* Mensagens de erro nos campos */
+.erro {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+@media (max-width: 768px) {
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal {
+    width: 95vw;
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    font-size: 0.85rem;
+  }
+
+  .estado-badge {
+    font-size: 0.75rem;
+  }
+}
+
+/* Estilos globais de tabela (zebra e hover) alinhados com Equipamentos */
+.equipamentos-page table {
+  tbody tr { transition: background 0.2s ease; }
+  tbody tr:nth-child(odd) { background: linear-gradient(90deg, #ffffff 0%, #f8fafc 100%); }
+  tbody tr:nth-child(even) { background: linear-gradient(90deg, #f9fafb 0%, #eef2f7 100%); }
+  tbody tr:hover { background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 100%); }
+
+  /* Borda sutil entre linhas */
+  tbody td { border-top: 1px solid #e5e7eb; }
+
+  /* Ações: cores dos ícones (visualizar=azul, editar=verde, apagar=vermelho) */
+  td.acoes { white-space: nowrap; }
+  td.acoes button { color: inherit; }
+  td.acoes button:hover { color: inherit; }
+  td.acoes .btn-edit i { color: #16a34a; }
+  td.acoes .btn-edit:hover i { color: #15803d; }
+  td.acoes .btn-delete i { color: #dc2626; }
+  td.acoes .btn-delete:hover i { color: #b91c1c; }
+  td.acoes .btn-view i { color: #2563eb; }
+  td.acoes .btn-view:hover i { color: #1d4ed8; }
+}
+
+/* Estilo dos filtros com ng-select para igualar ao visual de Equipamentos */
+.equipamentos-page .filtros .ng-select { min-width: 220px; }
+.equipamentos-page .filtros .ng-select .ng-select-container {
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.equipamentos-page .filtros .ng-select .ng-select-container:hover { background-color: #f3f4f6; }
+.equipamentos-page .filtros .ng-select .ng-select-container:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background-color: #ffffff;
+}
+.equipamentos-page .filtros .ng-select .ng-value,
+.equipamentos-page .filtros .ng-select .ng-placeholder { color: #1f2937; font-size: 0.95rem; }
+.equipamentos-page .filtros .ng-select .ng-arrow-wrapper,
+.equipamentos-page .filtros .ng-select .ng-clear-wrapper { color: #64748b; }

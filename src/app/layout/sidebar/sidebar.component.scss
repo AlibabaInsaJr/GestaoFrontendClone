@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+.sidebar {
+  width: 175px;
+  background-color: #1e293b;
+  color: white;
+  padding: 1rem;
+  height: 100vh;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+
+  overflow-y: auto;         /* 👈 permite rolagem vertical */
+  overflow-x: hidden;       /* 👈 evita scroll lateral */
+  scrollbar-width: thin;    /* Firefox */
+  scrollbar-color: #64748b transparent;
+
+  .brand {
+    text-decoration: none;
+    color: white;
+
+    h2 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-logo {
+      width: 2.75rem;   // aumentar ligeiramente
+      height: auto;
+      object-fit: contain;
+      display: inline-block;
+    }
+
+    &:hover {
+      color: #38bdf8;
+    }
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    flex-grow: 1;
+    margin: 0;
+
+    li {
+      margin-bottom: 0.5rem;
+
+      a {
+        color: white;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.5rem;
+        border-radius: 6px;
+        transition: background 0.3s;
+
+        &:hover {
+          background-color: #334155;
+        }
+      }
+
+      // Estilos para seções expansíveis
+      &.menu-section {
+        margin-bottom: 0;
+
+        .section-header {
+           cursor: pointer;
+           justify-content: space-between;
+           font-weight: 600;
+           background-color: transparent;
+           margin-bottom: 0.3rem;
+           border-radius: 8px;
+           padding: 0.5rem 0.7rem;
+           border: 1px solid rgba(255, 255, 255, 0.1);
+
+           &:hover {
+             background-color: rgba(255, 255, 255, 0.05);
+           }
+
+           .toggle-icon {
+             transition: transform 0.3s ease;
+             font-size: 0.7rem;
+
+             &.rotated {
+               transform: rotate(180deg);
+             }
+           }
+         }
+
+        .submenu {
+           max-height: 0;
+           overflow: hidden;
+           transition: max-height 0.3s ease;
+           padding-left: 0.3rem;
+           margin-bottom: 0.3rem;
+           list-style: none;
+
+           &.expanded {
+             max-height: 300px;
+           }
+
+           li {
+             margin-bottom: 0.6rem;
+
+             a {
+               font-size: 0.8rem;
+               padding: 0.3rem 0.6rem;
+               background-color: rgba(255, 255, 255, 0.05);
+               border-radius: 6px;
+               margin-left: 0.3rem;
+
+               &:hover {
+                 background-color: rgba(255, 255, 255, 0.1);
+               }
+             }
+           }
+         }
+      }
+    }
+  }
+
+  .logout {
+    button {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      padding: 0.4rem 0.5rem;
+      border-radius: 6px;
+      transition: background 0.3s;
+
+      &:hover {
+        background-color: #ef4444;
+      }
+    }
+  }
+}
+@media (max-width: 768px) {
+    .sidebar {
+      width: 160px;
+    }
+}
+  

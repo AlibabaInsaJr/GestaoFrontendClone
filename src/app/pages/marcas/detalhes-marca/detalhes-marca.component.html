@@ -1,0 +1,58 @@
+<div class="detalhes-marca-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-tags"></i>
+      Detalhes da Marca
+    </h1>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Resumo da Marca</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Id:</span> {{ marca?.id || '---' }}</p>
+        <p><span>Nome:</span> {{ marca?.nome || '---' }}</p>
+        <p><span>Data de Registo:</span> {{ marca?.dataRegisto | date: 'dd/MM/yyyy' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-block" *ngIf="modelos.length > 0; else semModelos">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-cubes"></i> Modelos Associados</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="table table-modelos">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-hashtag"></i> ID</th>
+            <th><i class="fa-solid fa-font"></i> Nome</th>
+            <th><i class="fa-solid fa-calendar-days"></i> Data de Registo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let modelo of modelos">
+            <td>{{ modelo.id }}</td>
+            <td>{{ modelo.nome }}</td>
+            <td>{{ modelo.dataRegisto | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semModelos>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-cubes"></i> Modelos Associados</h2>
+      </div>
+      <p class="mensagem-vazia">Nenhum modelo associado a esta marca.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+  </div>
+</div>

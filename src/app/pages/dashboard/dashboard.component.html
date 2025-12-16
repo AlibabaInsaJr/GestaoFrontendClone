@@ -1,0 +1,169 @@
+<div class="dashboard-container">
+  <!-- Header --> 
+  <header class="dashboard-header"> 
+    <div class="header-content"> 
+      <h1>Gestão de Equipamentos</h1> 
+    </div> 
+  </header>
+
+  <!-- Alerts / Loading -->
+  <div class="dashboard-alerts" *ngIf="isLoading || loadErrors.length">
+    <div *ngIf="isLoading" class="alert alert-info">A carregar dados do dashboard...</div>
+    <div *ngIf="loadErrors.length" class="alert alert-warning">
+      Não foi possível carregar todos os dados do dashboard.
+      <ul>
+        <li *ngFor="let err of loadErrors">{{ err }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Stats Cards (Interativos) --> 
+  <div class="stats-cards"> 
+    <div class="stat-card total" (click)="navegarPara('equipamentos')" style="cursor: pointer;"> 
+      <div class="stat-icon"> 
+        <span class="material-icons">devices</span> 
+      </div> 
+      <div class="stat-content"> 
+        <h3>Total de Equipamentos</h3> 
+        <p class="stat-value">{{ equipmentStats.total }}</p> 
+        <p class="stat-description">Todos os equipamentos registrados</p> 
+      </div> 
+    </div> 
+ 
+    <div class="stat-card allocated" (click)="navegarPara('alocacoes')" style="cursor: pointer;"> 
+      <div class="stat-icon"> 
+        <span class="material-icons">assignment_turned_in</span> 
+      </div> 
+      <div class="stat-content"> 
+        <h3>Equipamentos Alocados</h3> 
+        <p class="stat-value">{{ equipmentStats.allocated }}</p> 
+        <p class="stat-percentage"> 
+          <span class="highlight">{{ getAllocatedPercentage() }}%</span> do total 
+        </p> 
+      </div> 
+    </div> 
+ 
+    <div class="stat-card repair" (click)="navegarPara('reparacoes')" style="cursor: pointer;"> 
+      <div class="stat-icon"> 
+        <span class="material-icons">build</span> 
+      </div> 
+      <div class="stat-content"> 
+        <h3>Em Reparação</h3> 
+        <p class="stat-value">{{ equipmentStats.inRepair }}</p> 
+        <p class="stat-percentage"> 
+          <span class="highlight warning">{{ getRepairPercentage() }}%</span> do total 
+        </p> 
+      </div> 
+    </div> 
+ 
+    <div class="stat-card available" (click)="navegarPara('devolucoes')" style="cursor: pointer;"> 
+      <div class="stat-icon"> 
+        <span class="material-icons">assignment_return</span> 
+      </div> 
+      <div class="stat-content"> 
+        <h3>Devoluções</h3> 
+        <p class="stat-value">{{ allocationTypes[2].count }}</p> 
+ 
+        <p class="stat-description">Registos de equipamentos devolvidos</p> 
+      </div> 
+    </div> 
+  </div>
+
+  <!-- Charts Container --> 
+  <div class="charts-container"> 
+    <div class="chart-card"> 
+      <div class="chart-header"> 
+        <h2>Distribuição por Tipo de Ação</h2> 
+        <p class="chart-description">Visão geral das ações realizadas</p> 
+      </div> 
+      <div class="chart-body"> 
+        <div class="chart"> 
+        <canvas width="200px" height="100px" #pieChart></canvas> 
+        </div> 
+        <div class="chart-legend"> 
+          <div class="legend-item" *ngFor="let type of allocationTypes; let i = index"> 
+            <div class="legend-color" [style.background-color]="chartColors[i]"></div> 
+            <span>{{ type.label }}</span> 
+          </div> 
+        </div> 
+      </div> 
+    </div> 
+ 
+    <div class="chart-card"> 
+      <div class="chart-header"> 
+        <h2>Distribuição por Estado</h2> 
+        <p class="chart-description">Estados dos equipamentos</p> 
+      </div> 
+      <div class="chart-body"> 
+        <canvas #barChart></canvas> 
+      </div> 
+    </div> 
+ 
+    <div class="chart-card"> 
+      <div class="chart-header"> 
+        <h2>Tendência de Alocações</h2> 
+        <p class="chart-description">Últimos 6 meses</p> 
+      </div> 
+      <div class="chart-body"> 
+        <canvas #lineChart></canvas> 
+      </div> 
+    </div> 
+ 
+    <div class="chart-card"> 
+      <div class="chart-header"> 
+        <h2>Tendência de Reparações</h2> 
+        <p class="chart-description">Últimos 6 meses</p> 
+      </div> 
+      <div class="chart-body"> 
+        <canvas #lineChart2></canvas> 
+      </div> 
+    </div> 
+ 
+    <div class="chart-card"> 
+      <div class="chart-header"> 
+        <h2>Tendência de Devoluções</h2> 
+        <p class="chart-description">Últimos 6 meses</p> 
+      </div> 
+      <div class="chart-body"> 
+        <canvas #lineChart3></canvas> 
+      </div> 
+    </div>
+  </div>
+
+  <!-- Recent Activities --> 
+  <div class="recent-activities-container"> 
+    <div class="section-header"> 
+      <div> 
+        <h2>Atividades Recentes</h2> 
+        <p class="section-description">Últimas ações realizadas no sistema</p> 
+      </div> 
+      <div class="section-actions">
+        <button class="clear-btn" mat-button color="warn" (click)="limparAtividades()">Limpar</button>
+        <button class="view-all-btn" mat-button color="primary" (click)="navegarPara('actividades')">Ver Tudo</button>
+      </div>
+    </div> 
+    <div class="activities-list"> 
+      <div class="activity-item" *ngFor="let activity of recentActivities"> 
+        <div class="activity-icon" [ngClass]="getStatusClass(activity.type)"> 
+          <span class="material-icons">{{ getStatusIcon(activity.type) }}</span> 
+        </div> 
+        <div class="activity-details"> 
+          <div class="activity-header"> 
+            <h3>{{ activity.equipmentName }}</h3> 
+            <div class="activity-actions"> 
+              <span class="activity-badge" [ngClass]="getStatusBadgeClass(activity.type)"> 
+                {{ activity.status }} 
+              </span> 
+            </div> 
+          </div> 
+          <p class="activity-description"> 
+            {{ activity.status }} por <span class="activity-user">{{ activity.user }}</span> 
+          </p> 
+          <p class="activity-date"> 
+            {{ activity.date | date:'dd/MM/yyyy HH:mm' }} 
+          </p> 
+        </div> 
+      </div> 
+    </div>
+  </div>
+</div>

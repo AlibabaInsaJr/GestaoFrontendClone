@@ -1,0 +1,89 @@
+<h1>Empresas</h1>
+<div class="equipamentos-page">
+
+  <!-- Filtros -->
+  <div class="filtros">
+    <!-- Filtro por designação com ng-select -->
+    <ng-select
+      [items]="empresas"
+      bindLabel="designacao"
+      bindValue="id"
+      [(ngModel)]="filtroEmpresaId"
+      placeholder="Pesquisar por designação..."
+      [clearable]="true">
+    </ng-select>
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Nova Empresa
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Designação</th>
+          <th>Descrição</th>
+          <th>Telefone</th>
+          <th>Endereço</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let empresa of getEmpresasFiltradas()">
+          <td>{{ empresa.id }}</td>
+          <td>{{ empresa.designacao }}</td>
+          <td>{{ empresa.descricao }}</td>
+          <td>{{ empresa.telefone }}</td>
+          <td>{{ empresa.endereco }}</td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(false, empresa)"><i class="fas fa-edit"></i></button>
+            <button class="btn-delete" (click)="excluir(empresa.id)"><i class="fas fa-trash-alt"></i></button>
+            <button class="btn-view" [routerLink]="['/empresas', empresa.id]"><i class="fas fa-eye"></i></button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Nova' }} Empresa</h2>
+      <!-- Imagem pequena no topo do formulário quando for Nova Empresa -->
+      <div class="modal-header-graphic" *ngIf="!editando">
+        <img src="assets/empresas.png" alt="Empresas" class="modal-empresa-image" />
+      </div>
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <div>
+            <label>Designação</label>
+            <input formControlName="designacao" />
+            <small *ngIf="form.get('designacao')?.touched && form.get('designacao')?.invalid" class="erro">Obrigatório</small>
+          </div>
+          <div>
+            <label>Descrição</label>
+            <input type="text" formControlName="descricao" />
+            <small *ngIf="form.get('descricao')?.touched && form.get('descricao')?.invalid" class="erro">Obrigatório</small>
+          </div>
+          <div>
+            <label>Telefone</label>
+            <input type="text" formControlName="telefone" />
+            <small *ngIf="form.get('telefone')?.touched && form.get('telefone')?.invalid" class="erro">Obrigatório</small>
+          </div>
+          <div>
+            <label>Endereço</label>
+            <input type="text" formControlName="endereco" />
+            <small *ngIf="form.get('endereco')?.touched && form.get('endereco')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

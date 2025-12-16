@@ -1,0 +1,212 @@
+<h1>Alocações</h1>
+
+<div class="equipamentos-page">
+  <!-- Filtros -->
+  <div class="filtros">
+    <ng-select [items]="utilizadores" bindLabel="nome" bindValue="id" [(ngModel)]="filtroUtilizadorBeneficiario" placeholder="Utilizador Beneficiário" [clearable]="true"></ng-select>
+
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Nova Alocação
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Utilizador</th>
+          <th>Nº de Alocações</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let grupo of getGruposAlocacoesFiltrados(); trackBy: grupoTrackBy">
+          <tr>
+            <td>{{ grupo.nomeUtilizador }}</td>
+            <td>{{ grupo.alocacoes.length }}</td>
+            <td class="acoes">
+              <button class="btn-toggle" (click)="toggleExpandGrupo(grupo.utilizadorId); $event.stopPropagation()" title="Ver alocações" [attr.aria-expanded]="expandedGrupos.has(grupo.utilizadorId)">
+                <i class="fas" [ngClass]="expandedGrupos.has(grupo.utilizadorId) ? 'fa-angle-up' : 'fa-angle-down'"></i>
+              </button>
+            </td>
+          </tr>
+          <!-- Sub-linha expandível mostrando alocações do utilizador -->
+          <tr *ngIf="expandedGrupos.has(grupo.utilizadorId)">
+            <td colspan="3">
+              <div class="sub-wrapper" [@slideInOut]>
+                <table class="sub-tabela">
+                  <thead>
+                    <tr>
+                      <th>Id</th>
+                      <th>Data de Alocação</th>
+                      <th>Período</th>
+                      <th>Guia</th>
+                      <!-- Nova coluna: Marca -->
+                      <th>Marca</th>
+                      <!-- Coluna existente: Modelo (Tipo) -->
+                      <th>Modelo (Tipo)</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let aloc of grupo.alocacoes; trackBy: alocTrackBy">
+                      <td>{{ aloc.id }}</td>
+                      <td>{{ aloc.dataAlocacao | date:'dd/MM/yyyy' }}</td>
+                      <td>{{ aloc.periodoAlocacao === 1 ? 'Determinado' : 'Indeterminado' }}</td>
+                      <td>
+                        <ng-container *ngIf="aloc.pathGuiaRecepcao && !aloc.pathGuiaRecepcao.includes('placeholder'); else semGuia">
+                          <a [href]="toFileUrl(aloc.pathGuiaRecepcao)" target="_blank">Ver Guia</a>
+                        </ng-container>
+                        <ng-template #semGuia>—</ng-template>
+                      </td>
+                      <!-- Conteúdo da nova coluna Marca -->
+                      <td>{{ getMarcasDaAlocacao(aloc.id) }}</td>
+                      <!-- Conteúdo da coluna Modelo (Tipo) -->
+                      <td>{{ getModelosTiposDaAlocacao(aloc.id) }}</td>
+                      <td class="acoes">
+                        <button class="btn-edit" (click)="abrirModal(false, aloc)" title="Editar">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-delete" (click)="excluir(aloc.id)" title="Excluir">
+                          <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="btn-view" [routerLink]="['/alocacoes', aloc.id]" title="Ver detalhes">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Nova' }} Alocação</h2>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <div>
+            <label>Utilizador Beneficiário: *</label>
+            <ng-select [items]="utilizadores" bindLabel="nome" bindValue="id" formControlName="utilizadorBeneficiarioId" placeholder="Selecione" [clearable]="true" [searchFn]="utilizadorSearchFn"></ng-select>
+            <small *ngIf="form.get('utilizadorBeneficiarioId')?.touched && form.get('utilizadorBeneficiarioId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Utilizador Entregador: *</label>
+            <ng-select [items]="utilizadores" bindLabel="nome" bindValue="id" formControlName="utilizadorEntregadorId" placeholder="Selecione" [clearable]="true" [searchFn]="utilizadorSearchFn"></ng-select>
+            <small *ngIf="form.get('utilizadorEntregadorId')?.touched && form.get('utilizadorEntregadorId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Data de Alocação: *</label>
+            <input type="date" formControlName="dataAlocacao" />
+            <small *ngIf="form.get('dataAlocacao')?.touched && form.get('dataAlocacao')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+              <label>Período de Alocação: *</label>
+              <div class="periodo-search">
+                <input 
+                  type="text" 
+                  placeholder="Digite para filtrar período..." 
+                  [(ngModel)]="periodoBusca" 
+                  [ngModelOptions]="{standalone: true}"
+                  (input)="filtrarPeriodos()"
+                  (focus)="filtrarPeriodos()"
+                  (click)="filtrarPeriodos()"
+                  (keydown.enter)="periodosFiltrados.length ? selecionarPeriodo(periodosFiltrados[0]) : null"
+                />
+                <div class="periodos-dropdown" *ngIf="periodosFiltrados.length > 0">
+                  <div 
+                    *ngFor="let p of periodosFiltrados" 
+                    class="periodo-item"
+                    (click)="selecionarPeriodo(p)"
+                  >
+                    {{ p }}
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" formControlName="periodoAlocacao" />
+              <small *ngIf="form.get('periodoAlocacao')?.touched && form.get('periodoAlocacao')?.invalid" class="erro">Obrigatório</small>
+            </div>
+
+          <div>
+            <app-file-upload
+              formControlName="pathGuiaRecepcao"
+              label="Guia de Recepção:"
+              placeholder="Selecione o arquivo da guia de recepção (opcional)"
+              accept=".pdf"
+              size="compact"
+              [required]="false"
+              [showFileName]="false"
+              [loadedText]="'(Carregado)'"
+              (error)="onFileError($event)">
+            </app-file-upload>
+            <small class="info-text">Campo opcional - nem todos os ativos possuem documentação</small>
+          </div>
+
+          <div>
+            <label>Equipamentos para Alocação: *</label>
+            <div class="equipamento-search">
+              <input 
+                type="text" 
+                placeholder="Buscar por número de série ou modelo..." 
+                [(ngModel)]="equipamentoBusca" 
+                [ngModelOptions]="{standalone: true}"
+                (input)="filtrarEquipamentosSugestao()"
+                (focus)="filtrarEquipamentosSugestao()"
+                (click)="filtrarEquipamentosSugestao()"
+                (keydown.enter)="equipamentosFiltradosSugestao.length ? selecionarEquipamentoSugestao(equipamentosFiltradosSugestao[0]) : null"
+              />
+              <div class="equipamentos-dropdown" *ngIf="equipamentosFiltradosSugestao.length > 0">
+                <div 
+                  *ngFor="let eq of equipamentosFiltradosSugestao" 
+                  class="equipamento-item"
+                  (click)="selecionarEquipamentoSugestao(eq)"
+                >
+                  <strong class="modelo">{{ getModeloNome(eq.modeloId) }}</strong>
+                  <small class="serie">{{ eq.numeroSerie }}</small>
+                </div>
+              </div>
+              <div class="equipamentos-counter" *ngIf="selectedEquipamentos.length > 0" style="margin-top:8px;">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ selectedEquipamentos.length }} equipamento(s) selecionado(s)</span>
+              </div>
+            </div>
+            <!-- Lista opcional com checkboxes permanece para gestão visual das seleções -->
+            <div class="equipamentos-container">
+              <div class="equipamentos-scroll">
+                <label *ngFor="let eq of getEquipamentosFiltrados()" class="equipamento-item">
+                  <input
+                    type="checkbox"
+                    [value]="eq.numeroSerie"
+                    [checked]="selectedEquipamentos.includes(eq.numeroSerie)"
+                    (change)="toggleEquipamentoSelecionado(eq.numeroSerie, $event)"
+                  />
+                  <span class="equipamento-info">
+                    <strong class="modelo">{{ getModeloNome(eq.modeloId) }}</strong>
+                    <small class="serie">{{ eq.numeroSerie }}</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-salvar" [disabled]="form.invalid || isUploadingGuia">Salvar</button>
+          <button type="button" class="btn-cancelar" (click)="fecharModal()">Cancelar</button>
+          <button type="button" class="btn-gerar" (click)="gerarGuiaRecepcao()" [disabled]="form.invalid || selectedEquipamentos.length === 0">Gerar Guia</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

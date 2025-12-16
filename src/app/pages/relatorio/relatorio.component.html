@@ -1,0 +1,192 @@
+
+<h1>Relatórios</h1>
+<div class="equipamentos-page">
+
+  <div class="filtros">
+    <div class="report-selector">
+      <h3>Selecionar Itens para Relatório</h3>
+      <div class="checkbox-grid">
+        <div *ngFor="let item of reportItems" class="checkbox-item">
+          <label>
+            <input type="checkbox" [(ngModel)]="item.selected" name="{{ item.name }}" />
+            <i class="fas fa-file-alt"></i>
+            {{ item.label }}
+          </label>
+        </div>
+      </div>
+    </div>
+    <!-- Barra de filtro por período -->
+    <section class="relatorio-filter-bar">
+      <div class="date-filter">
+        <div class="field">
+          <label for="startDate">Início</label>
+          <input id="startDate" type="date" [(ngModel)]="startDate" />
+        </div>
+        <div class="field">
+          <label for="endDate">Fim</label>
+          <input id="endDate" type="date" [(ngModel)]="endDate" />
+        </div>
+        <div class="actions">
+          <button class="btn apply" (click)="aplicarFiltroPeriodo()">Aplicar Filtro</button>
+        </div>
+      </div>
+      <div class="period-hint" *ngIf="startDate && endDate">
+        Período selecionado: <strong>{{ startDate }}</strong> até <strong>{{ endDate }}</strong>
+      </div>
+    </section>
+    
+    <div class="action-buttons">
+      <button class="novo-btn" (click)="generateReport()">
+        <i class="fas fa-chart-bar"></i> Gerar Relatório
+      </button>
+      <button class="export-btn" (click)="exportToPDF()">
+        <i class="fas fa-file-pdf"></i> Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="generatedTables.length" class="tabela-wrapper" id="report-content">
+    <div class="report-results">
+      <h4><i class="fas fa-chart-line"></i> Relatórios Gerados</h4>
+
+      <ng-container *ngFor="let table of generatedTables">
+        <div class="table-title">
+          <i class="fas fa-table"></i>
+          {{ table.title }} ({{ table.count }} registos)
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th *ngFor="let col of table.columns">{{ col.label }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of table.rows">
+                <td *ngFor="let col of table.columns">{{ row[col.key] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Template personalizado para PDF (oculto na tela) -->
+  <div id="pdf-template"
+       class="pdf-template pdf-bg"
+       [ngStyle]="{ 'background-image': 'url(' + getTemplateBgSrc() + ')' }"
+       style="display: none;">
+
+    <!-- Cabeçalho e rodapé HTML só aparecem quando NÃO se usa imagem de fundo -->
+    <div class="pdf-header" *ngIf="!useImageTemplate">
+      <div class="pdf-logo">
+        <img [src]="getLogoSrc()" alt="INCM Logo" class="logo-pdf">
+      </div>
+      <div class="pdf-title">
+        <div class="pdf-org">
+          <p>Divisão de Assuntos Corporativos</p>
+          <p>Departamento de Gestão de Sistemas de Informação</p>
+          <p>Repartição de Infraestruturas e Segurança</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pdf-report-title" *ngIf="!useImageTemplate">Relatório</div>
+    
+    <!-- Overlay com posicionamento absoluto dos elementos entre RELATÓRIO e RODAPÉ -->
+    <div class="pdf-overlay">
+      <div class="content-container">
+        <!-- LOGO SVG -->
+        <img [src]="getLogoSrc()" alt="Logo" class="svg-logo" />
+
+        <!-- Cabeçalho Institucional (texto) -->
+        <div class="header-inst">
+          <p>Divisão de Assuntos Corporativos</p>
+          <p>Departamento de Gestão de Sistemas de Informação</p>
+          <p>Repartição de Infraestruturas e Segurança</p>
+        </div>
+
+        <!-- Título RELATÓRIO centralizado -->
+        <div class="title-relatorio">RELATÓRIO</div>
+
+        <!-- Caixa de Resumo -->
+        <div class="resumo-box">
+          <h3>Resumo do Relatório</h3>
+          <p><strong>Itens selecionados:</strong> {{ getSelectedItemsText() }}</p>
+          <p><strong>Total de registos:</strong> {{ generatedReports.length }}</p>
+          <p><strong>Data de geração:</strong> {{ getCurrentDate() }}</p>
+        </div>
+
+        <!-- Títulos e conteúdo conforme estrutura especificada -->
+        <h2>1. INTRODUÇÃO</h2>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus ultrices.</p>
+
+        <h2>2. ANÁLISE TÉCNICA</h2>
+        <h3>2.1 Infraestrutura de Rede</h3>
+        <p>Conteúdo de exemplo da infraestrutura de rede.</p>
+        <h3>2.2 Segurança da Informação</h3>
+        <p>Conteúdo de exemplo da segurança da informação.</p>
+        <h3>2.3 Gestão de Ativos</h3>
+        <p>Conteúdo de exemplo da gestão de ativos.</p>
+
+        <h2>3. INDICADORES DE DESEMPENHO</h2>
+        <div class="indicadores-box">
+          <p><strong>Disponibilidade:</strong> 99,2%</p>
+          <p><strong>Incidentes resolvidos:</strong> 24</p>
+          <p><strong>Tempo médio de resposta:</strong> 3h</p>
+        </div>
+
+        <h2>4. RECOMENDAÇÕES</h2>
+        <p>Conteúdo de exemplo de recomendações técnicas.</p>
+
+        <h2>5. CONCLUSÃO</h2>
+        <p>Conclusões do relatório com base na análise técnica.</p>
+
+        <!-- Tabela com colunas alinhadas pelos X aproximados -->
+        <div class="tabela-relatorio">
+          <div class="tabela-header">
+            <div class="col-nr">Nº</div>
+            <div class="col-modelo">Modelo</div>
+            <div class="col-serie">Nº Série</div>
+            <div class="col-estado">Estado</div>
+          </div>
+          <div class="tabela-body">
+            <div *ngFor="let n of placeholderRows" class="tabela-row">
+              <div class="col-nr">{{ n }}</div>
+              <div class="col-modelo">Modelo {{ n }}</div>
+              <div class="col-serie">SN-{{ 1000 + n }}</div>
+              <div class="col-estado">Ativo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rodapé SVG posicionado no fundo -->
+    <img [src]="getFooterSvgSrc()" alt="Rodapé" class="svg-footer" />
+  </div>
+
+    <div class="pdf-footer">
+      <p>© {{ getCurrentYear() }} G ACTIVOS - Sistema de Gestão de Ativos</p>
+      <p>Relatório gerado automaticamente pelo sistema</p>
+    </div>
+  </div>
+<section class="relatorio-filter-bar" style="display:none">
+  <div class="date-filter">
+    <div class="field">
+      <label for="startDate">Início</label>
+      <input id="startDate" type="date" [(ngModel)]="startDate" />
+    </div>
+    <div class="field">
+      <label for="endDate">Fim</label>
+      <input id="endDate" type="date" [(ngModel)]="endDate" />
+    </div>
+    <div class="actions">
+      <button class="btn apply" (click)="aplicarFiltroPeriodo()">Aplicar Filtro</button>
+      <button class="btn generate" (click)="generateReport()">Gerar Relatório</button>
+    </div>
+  </div>
+  <div class="period-hint" *ngIf="startDate && endDate">
+    Período selecionado: <strong>{{ startDate }}</strong> até <strong>{{ endDate }}</strong>
+  </div>

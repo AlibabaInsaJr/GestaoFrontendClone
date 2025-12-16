@@ -1,0 +1,222 @@
+<h1>Devoluções</h1>
+
+<div class="equipamentos-page">
+  <!-- Filtros -->
+  <div class="filtros">
+    <!-- Filtros com ng-select, iguais ao componente de Grupos -->
+    <ng-select
+      [items]="utilizadores"
+      bindLabel="nome"
+      bindValue="id"
+      [(ngModel)]="filtroUtilizador"
+      placeholder="Quem devolveu..."
+      [clearable]="true">
+    </ng-select>
+
+    <ng-select
+      [items]="utilizadores"
+      bindLabel="nome"
+      bindValue="id"
+      [(ngModel)]="filtroTecnico"
+      placeholder="Quem recebeu..."
+      [clearable]="true">
+    </ng-select>
+
+    <button class="novo-btn" (click)="abrirModal()">
+      <i class="fas fa-plus"></i> Nova Devolução
+    </button>
+
+    <!-- Busca textual nas devoluções -->
+    <input
+      type="text"
+      class="input-pesquisa"
+      [(ngModel)]="filtroBuscaTerm"
+      placeholder="Pesquisar por Nº de guia, utilizador ou data..." />
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Quem devolveu</th>
+          <th>Data</th>
+          <th>Quem recebeu</th>
+          <th>Guia</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let d of getDevolucoesFiltradas()">
+          <td>{{ d.id }}</td>
+          <td>{{ getNomeUtilizador(d.utilizadorDevolveuId) }}</td>
+          <td>{{ d.dataDevolucao | date:'dd/MM/yyyy' }}</td>
+          <td>{{ getNomeUtilizador(d.utilizadorRecebeuId) }}</td>
+          <td>
+            <a [href]="toFileUrl(d.pathGuiaDevolucao)" target="_blank">Ver Guia</a>
+          </td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(d)"><i class="fas fa-edit"></i></button>
+            <button class="btn-delete" (click)="excluir(d.id)"><i class="fas fa-trash-alt"></i></button>
+            <button class="btn-view" [routerLink]="['/devolucoes', d.id]"><i class="fas fa-eye"></i></button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <!-- Modal de criação/edição -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Nova' }} Devolução</h2>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <!-- Primeira linha: Quem devolveu / Quem recebeu -->
+        <div class="form-grid">
+          <div>
+            <label>Quem Devolveu: *</label>
+            <ng-select
+              formControlName="utilizadorDevolveuId"
+              [items]="utilizadores"
+              bindLabel="nome"
+              bindValue="id"
+              placeholder="Selecione o Utilizador"
+              [clearable]="true">
+            </ng-select>
+            <small *ngIf="form.get('utilizadorDevolveuId')?.touched && form.get('utilizadorDevolveuId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Quem Recebeu: *</label>
+            <ng-select
+              formControlName="utilizadorRecebeuId"
+              [items]="utilizadores"
+              bindLabel="nome"
+              bindValue="id"
+              placeholder="Selecione o Técnico"
+              [clearable]="true">
+            </ng-select>
+            <small *ngIf="form.get('utilizadorRecebeuId')?.touched && form.get('utilizadorRecebeuId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <!-- Linha: Data da Devolução e Guia (logo abaixo dos filtros) -->
+        <div class="form-grid data-guia-top">
+          <div>
+            <label>Data da Devolução: *</label>
+            <input type="date" formControlName="dataDevolucao" />
+            <small *ngIf="form.get('dataDevolucao')?.touched && form.get('dataDevolucao')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+             <app-file-upload
+                 formControlName="pathGuiaDevolucao"
+                 label="Guia de Devolução:"
+                 [placeholder]="form.get('pathGuiaDevolucao')?.value ? 'Carregado' : 'Carregar'"
+                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                 size="compact"
+                 [required]="false"
+                 [showFileName]="false"
+                 loadedText="(Carregado)"
+                 (error)="onFileError($event)">
+               </app-file-upload>
+              <small class="info-text">Campo opcional - nem todos os ativos possuem documentação</small>
+           </div>
+        </div>
+
+        
+
+        <!-- Seção de Equipamentos (agora mais acima) -->
+        <h3>Equipamentos para Devolução</h3>
+        <div class="equipamentos-section" *ngIf="form.get('utilizadorDevolveuId')?.value; else selecioneBeneficiario">
+          <!-- Busca com sugestões (igual ao campo de Alocações, mas filtrando por equipamentos do beneficiário) -->
+          <div class="equipamento-search">
+            <input
+              type="text"
+              class="input-pesquisa"
+              placeholder="Buscar por modelo..."
+              [(ngModel)]="equipamentoBusca"
+              [ngModelOptions]="{standalone: true}"
+              (input)="filtrarEquipamentosSugestao()"
+              (focus)="filtrarEquipamentosSugestao()"
+              (click)="filtrarEquipamentosSugestao()"
+              (keydown.enter)="equipamentosFiltradosSugestao.length ? selecionarEquipamentoSugestao(equipamentosFiltradosSugestao[0]) : null"
+            />
+            <div class="equipamentos-dropdown" *ngIf="equipamentosFiltradosSugestao.length > 0">
+              <div
+                *ngFor="let eq of equipamentosFiltradosSugestao"
+                class="equipamento-item"
+                (click)="selecionarEquipamentoSugestao(eq)"
+              >
+                <strong class="modelo">{{ getModeloNome(eq.modeloId) }}</strong>
+                <small class="serie">{{ eq.numeroSerie }}</small>
+              </div>
+            </div>
+            <div class="equipamentos-counter" *ngIf="selectedEquipamentos.length > 0" style="margin-top:8px;">
+              <i class="fas fa-check-circle"></i>
+              <span>{{ selectedEquipamentos.length }} equipamento(s) selecionado(s)</span>
+            </div>
+          </div>
+
+          <!-- Lista de equipamentos com o mesmo visual do componente de Alocações -->
+          <div class="equipamentos-container" *ngIf="getEquipamentosFiltrados().length > 0; else semEquipamentos">
+            <div class="equipamentos-scroll">
+              <div class="equipamento-linha" *ngFor="let eq of getEquipamentosFiltrados()">
+                <label class="equipamento-item">
+                  <input
+                    type="checkbox"
+                    [id]="'eq-' + eq.id"
+                    [value]="eq.id"
+                    [checked]="selectedEquipamentos.includes(eq.id)"
+                    (change)="toggleEquipamentoSelecionado(eq.id, $event)" />
+                  <span class="equipamento-info">
+                    <strong class="modelo">{{ getModeloNome(eq.modeloId) }}</strong>
+                    <small class="serie">{{ eq.numeroSerie }}</small>
+                  </span>
+              </label>
+                <ng-select
+                  class="estado-select inline"
+                  [items]="estadosEquipamento"
+                  [(ngModel)]="estadoEquipamentosSelecionados[eq.id]" [ngModelOptions]="{standalone: true}"
+                  [disabled]="!selectedEquipamentos.includes(eq.id)"
+                  [appendTo]="'body'"
+                  placeholder="Selecione o Estado"
+                  [clearable]="true">
+                </ng-select>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #semEquipamentos>
+            <div class="mensagem-vazia">
+              <i class="fas fa-info-circle"></i>
+              <p>Nenhum equipamento alocado disponível para devolução.</p>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- Template mostrado quando ainda não há beneficiário selecionado -->
+        <ng-template #selecioneBeneficiario>
+          <div class="mensagem-vazia">
+            <i class="fas fa-user"></i>
+            <p>Selecione primeiro quem devolveu para listar apenas os equipamentos alocados a esse utilizador.</p>
+          </div>
+        </ng-template>
+
+        
+
+        <!-- Botões -->
+        <div class="modal-actions">
+          <small class="erro" *ngIf="selectedEquipamentos.length === 0">Selecione pelo menos um equipamento.</small>
+          <button type="submit" [disabled]="form.invalid || selectedEquipamentos.length === 0">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+          <button type="button" class="btn-gerar" (click)="gerarGuiaDevolucao()" [class.ready]="form.valid && selectedEquipamentos.length > 0">Gerar guia</button>
+        </div>
+      </form>
+  </div>
+</div>
+
+
+

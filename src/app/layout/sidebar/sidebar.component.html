@@ -1,0 +1,70 @@
+<nav class="sidebar">
+    <a class="brand" routerLink="/dashboard">
+      <h2>
+        <img [src]="logoSrc" (error)="onLogoError($event)" alt="Logo" class="brand-logo">
+        Gestão de Activos
+      </h2>
+    </a>
+
+    <ul>
+      <!-- Dashboard -->
+      <li><a routerLink="/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+
+      <!-- Equipamentos e Tipos -->
+
+      <!-- Inventário -->
+      <li class="menu-section">
+        <a (click)="toggleSection('inventario')" class="section-header">
+          <i class="fas fa-box"></i> Inventário
+          <i class="fas fa-chevron-down toggle-icon" [class.rotated]="expandedSections['inventario']"></i>
+        </a>
+        <ul class="submenu" [class.expanded]="expandedSections['inventario']">
+          <li><a (click)="navigateWithLoading('/equipamentos')"><i class="fas fa-desktop"></i> Equipamentos</a></li>
+          <li><a (click)="navigateWithLoading('/tipos-equipamento')"><i class="fas fa-desktop"></i> Tipo de Equipamento</a></li>
+          <li><a (click)="navigateWithLoading('/marcas')"><i class="fas fa-tags"></i> Marca</a></li>
+          <li><a (click)="navigateWithLoading('/modelos')"><i class="fas fa-cogs"></i> Modelo</a></li>
+        </ul>
+      </li>
+
+
+
+      <!-- Operações -->
+      <li class="menu-section">
+        <a (click)="toggleSection('operacoes')" class="section-header">
+          <i class="fas fa-cogs"></i> Operações
+          <i class="fas fa-chevron-down toggle-icon" [class.rotated]="expandedSections['operacoes']"></i>
+        </a>
+        <ul class="submenu" [class.expanded]="expandedSections['operacoes']">
+          <li><a (click)="navigateWithLoading('/aquisicoes')"><i class="fas fa-shopping-cart"></i> Aquisições</a></li>
+          <li><a (click)="navigateWithLoading('/reparacoes')"><i class="fas fa-tools"></i> Reparações</a></li>
+          <li><a (click)="navigateWithLoading('/alocacoes')"><i class="fas fa-handshake"></i> Alocações</a></li>
+          <li><a (click)="navigateWithLoading('/devolucoes')"><i class="fas fa-undo"></i> Devoluções</a></li>
+          <li><a (click)="navigateWithLoading('/baixas')"><i class="fas fa-trash"></i> Baixas</a></li>
+        </ul>
+      </li>
+
+
+
+      <!-- Gestão -->
+      <li class="menu-section">
+        <a (click)="toggleSection('gestao')" class="section-header">
+          <i class="fas fa-users-cog"></i> Gestão
+          <i class="fas fa-chevron-down toggle-icon" [class.rotated]="expandedSections['gestao']"></i>
+        </a>
+        <ul class="submenu" [class.expanded]="expandedSections['gestao']">
+          <li><a (click)="navigateWithLoading('/utilizadores')"><i class="fas fa-users"></i> Utilizadores</a></li>
+          <li><a (click)="navigateWithLoading('/empresas')"><i class="fas fa-user-tag"></i> Empresas</a></li>
+          <li><a (click)="navigateWithLoading('/unidades')"><i class="fas fa-building"></i> Unidades</a></li>
+          <li><a (click)="navigateWithLoading('/grupo')"><i class="fas fa-user-tag"></i> Grupos</a></li>
+          <li><a (click)="navigateWithLoading('/relatorio')"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+        </ul>
+      </li>
+    </ul>
+
+
+    <div class="logout">
+      <button (click)="logout()">
+        <i class="fas fa-sign-out-alt"></i> Sair
+      </button>
+    </div>
+  </nav>

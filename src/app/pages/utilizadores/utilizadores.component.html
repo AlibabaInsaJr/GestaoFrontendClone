@@ -1,0 +1,128 @@
+<h1>Utilizadores</h1>
+<div class="equipamentos-page">
+  <!-- Filtros -->
+  <div class="filtros">
+    <!-- Filtro igual ao componente de Alocações: ng-select por nome -->
+    <ng-select 
+      [items]="utilizadores" 
+      bindLabel="nome" 
+      bindValue="id" 
+      [(ngModel)]="filtroUtilizadorId" 
+      placeholder="Pesquisar por nome..." 
+      [clearable]="true">
+    </ng-select>
+
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i>Novo Utilizador
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Telefone</th>
+          <th>Cargo</th>
+          <th>Unidade</th>
+          <th>Grupos</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of getUtilizadoresFiltrados()">
+          <td>{{ u.id }}</td>
+          <td>{{ u.nome }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.telefone }}</td>
+          <td>{{ u.cargo }}</td>
+          <td>{{ getUnidadeNome(u.unidadeId) }}</td>
+          <td>{{ getGruposNomes(u.gruposIds) }}</td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(false, u)">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-delete" (click)="excluir(u.id)">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+            <button class="btn-view" [routerLink]="['/utilizadores', u.id]">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Cadastrar' }} Utilizador</h2>
+      <!-- Imagem pequena no topo do formulário quando for Novo Utilizador -->
+      <div class="modal-header-graphic" *ngIf="!editando">
+        <img src="assets/user.png" alt="Utilizador" class="modal-user-image" />
+      </div>
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Nome</label>
+              <input type="text" formControlName="nome" />
+            </div>
+            <div class="form-field">
+              <label>Email</label>
+              <input type="email" formControlName="email" />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-field">
+              <label>Telefone</label>
+              <input type="text" formControlName="telefone" />
+            </div>
+            <div class="form-field">
+              <label>Cargo</label>
+              <input type="text" formControlName="cargo" />
+            </div>
+          </div>
+          
+          <!-- Linha com filtros: Unidade (esquerda) e Grupos (direita) -->
+          <div class="form-row">
+            <div class="form-field">
+              <label>Unidade</label>
+              <ng-select 
+                [items]="unidades"
+                bindLabel="nome"
+                bindValue="id"
+                formControlName="unidadeId"
+                placeholder="Selecione uma unidade"
+                [clearable]="true">
+              </ng-select>
+            </div>
+
+            <div class="form-field">
+              <label>Grupos</label>
+              <ng-select 
+                [items]="grupos"
+                bindLabel="nome"
+                bindValue="id"
+                [multiple]="true"
+                formControlName="gruposIds"
+                placeholder="Selecione grupos"
+                [clearable]="true">
+              </ng-select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

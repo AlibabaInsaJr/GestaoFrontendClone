@@ -1,0 +1,63 @@
+/* Estilos para notificações do Angular Material Snackbar */
+
+.success-snackbar {
+  background-color: #4caf50 !important;
+  color: white !important;
+  
+  .mat-mdc-snack-bar-action {
+    color: #c8e6c9 !important;
+  }
+}
+
+.error-snackbar {
+  background-color: #f44336 !important;
+  color: white !important;
+  
+  .mat-mdc-snack-bar-action {
+    color: #ffcdd2 !important;
+  }
+}
+
+.warning-snackbar {
+  background-color: #ff9800 !important;
+  color: white !important;
+  
+  .mat-mdc-snack-bar-action {
+    color: #ffe0b2 !important;
+  }
+}
+
+.info-snackbar {
+  background-color: #2196f3 !important;
+  color: white !important;
+  
+  .mat-mdc-snack-bar-action {
+    color: #bbdefb !important;
+  }
+}
+
+/* Posicionamento e animações */
+.mat-mdc-snack-bar-container {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  font-weight: 500 !important;
+  
+  .mat-mdc-snack-bar-label {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .mat-mdc-snack-bar-action {
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .mat-mdc-snack-bar-container {
+    margin: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+  }
+}

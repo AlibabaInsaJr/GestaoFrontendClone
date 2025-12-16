@@ -1,0 +1,580 @@
+import { 
+  Component, 
+  ElementRef, 
+  OnInit, 
+  ViewChild, 
+  AfterViewInit 
+} from '@angular/core';
+import { CommonModule, DatePipe, NgClass } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { Router } from '@angular/router';
+import { Chart, registerables } from 'chart.js';
+
+import { EquipamentoService } from '../../services/equipamento.service';
+import { AlocacaoService } from '../../services/alocacoes.service';
+import { ReparacaoService } from '../../services/reparacao.service';
+import { DevolucoesService } from '../../services/devolucoes.service';
+import { BaixasService } from '../../services/baixas.service';
+
+Chart.register(...registerables);
+
+interface Activity {
+  id: number;
+  type: string;
+  equipmentName: string;
+  date: Date;
+  user: string;
+  status: string;
+}
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [
+    CommonModule,
+    NgClass,
+    MatIconModule,
+    MatMenuModule,
+    MatButtonModule,
+    MatDividerModule
+  ],
+  providers: [DatePipe],
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.scss']
+})
+export class DashboardComponent implements OnInit, AfterViewInit {
+  verDetalheS(_t91: Activity) {
+    throw new Error('Method not implemented.');
+  }
+  verDetalhES(_t91: Activity) {
+    throw new Error('Method not implemented.');
+  }
+  @ViewChild('pieChart') pieChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('barChart') barChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lineChart') lineChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lineChart2') lineChart2Ref!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('lineChart3') lineChart3Ref!: ElementRef<HTMLCanvasElement>;
+
+  equipmentStats = {
+    total: 0,
+    allocated: 0,
+    inRepair: 0,
+    available: 0,
+    writtenOff: 0
+  };
+
+  allocationTrend: number[] = [];
+  repairTrend: number[] = [];
+  returnTrend: number[] = [];
+  months: string[] = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+
+  recentActivities: Activity[] = [];
+  allocationTypes = [
+    { label: 'Alocações', count: 0 },
+    { label: 'Reparações', count: 0 },
+    { label: 'Devoluções', count: 0 },
+    { label: 'Baixas', count: 0 }
+  ];
+
+  equipmentByStatus = [
+    { status: 'NOVO', count: 0 },
+    { status: 'BOM', count: 0 },
+    { status: 'AVARIADO', count: 0 },
+    { status: 'OBSOLETO', count: 0 }
+  ];
+
+  chartColors: string[] = ['#4CAF50', '#FFC107', '#2196F3', '#F44336'];
+
+  constructor(
+    private equipamentoService: EquipamentoService,
+    private alocacaoService: AlocacaoService,
+    private reparacaoService: ReparacaoService,
+    private devolucaoService: DevolucoesService,
+    private baixaService: BaixasService,
+    private datePipe: DatePipe,
+    private router: Router
+  ) {}
+
+  private chartsInitialized = false;
+  private dataLoaded = {
+    equipamentos: false,
+    alocacoes: false,
+    reparacoes: false,
+    devolucoes: false,
+    baixas: false
+  };
+  
+  isLoading = true;
+  private charts: { [key: string]: Chart } = {};
+
+  ngOnInit(): void {
+    this.carregarEstatisticas();
+    this.carregarAtividadesRecentes();
+    console.log('Dashboard inicializado');
+  }
+
+  limparAtividades(): void {
+    this.auditService.clearStoredActivities();
+    this.carregarAtividadesRecentes();
+  }
+
+  ngAfterViewInit(): void {
+    // Aguardar um pouco mais para garantir que os elementos estão prontos
+    setTimeout(() => {
+      this.chartsInitialized = true;
+      this.initCharts();
+    }, 200);
+  }
+
+
+
+  private updateCharts(): void {
+    // Atualiza os gráficos se já foram inicializados
+    if (this.chartsInitialized && !this.isLoading) {
+      this.destroyExistingCharts();
+      this.initCharts();
+    }
+  }
+
+  private destroyExistingCharts(): void {
+    // Destroi gráficos existentes para evitar sobreposição
+    Object.values(this.charts).forEach(chart => {
+      if (chart) {
+        chart.destroy();
+      }
+    });
+    this.charts = {};
+  }
+
+  recarregarDados(): void {
+    console.log('🔄 Recarregando dados do dashboard...');
+    this.isLoading = true;
+    
+    // Reset data loaded flags
+    Object.keys(this.dataLoaded).forEach(key => {
+      this.dataLoaded[key as keyof typeof this.dataLoaded] = false;
+    });
+    
+    // Destruir gráficos existentes
+    this.destroyExistingCharts();
+    
+    // Recarregar dados
+    this.carregarEstatisticas();
+    this.carregarAtividadesRecentes();
+  }
+
+  navegarPara(destino: string): void {
+    this.router.navigate(['/' + destino]);
+  }
+
+  carregarEstatisticas(): void {
+    this.equipamentoService.listarEquipamentos().subscribe(equipamentos => {
+      this.equipmentStats.total = equipamentos.length;
+      this.equipmentStats.allocated = equipamentos.filter(e => e.estado === 'ALOCADO').length;
+      this.equipmentStats.inRepair = equipamentos.filter(e => e.estado === 'REPARACAO').length;
+      this.equipmentStats.available = equipamentos.filter(e => e.estado === 'DISPONIVEL' || e.estado === 'STOCK_BOM').length;
+      this.equipmentStats.writtenOff = equipamentos.filter(e => e.estado === 'BAIXA').length;
+
+      this.equipmentByStatus = [
+        { status: 'NOVO', count: equipamentos.filter(e => e.estado === 'STOCK_NOVO').length },
+        { status: 'BOM', count: equipamentos.filter(e => e.estado === 'STOCK_BOM').length },
+        { status: 'AVARIADO', count: equipamentos.filter(e => e.estado === 'STOCK_AVARIADO').length },
+        { status: 'OBSOLETO', count: equipamentos.filter(e => e.estado === 'BAIXA').length }
+      ];
+    });
+
+    this.alocacaoService.listar().subscribe(data => {
+      this.allocationTypes[0].count = data.length;
+      this.allocationTrend = this.calcularTrendMensal(data);
+    });
+
+    this.reparacaoService.listar().subscribe(data => {
+      this.allocationTypes[1].count = data.length;
+      this.repairTrend = this.calcularTrendMensal(data);
+    });
+
+    this.devolucaoService.listar().subscribe(data => {
+      this.allocationTypes[2].count = data.length;
+      this.returnTrend = this.calcularTrendMensal(data);
+    });
+
+    this.baixaService.listar().subscribe(data => {
+      this.allocationTypes[3].count = data.length;
+    });
+  }
+
+  carregarAtividadesRecentes(): void {
+    this.alocacaoService.listar().subscribe(data => {
+      const atividades: Activity[] = data.slice(-3).map(a => ({
+        id: a.id,
+        type: 'alocacao',
+        equipmentName: `Equip. ${a.id}`,
+        date: new Date(a.dataAlocacao),
+        user: `User ${a.utilizadorBeneficiarioId}`,
+        status: 'Alocado'
+      }));
+
+      this.reparacaoService.listar().subscribe(r => {
+        atividades.push(
+          ...r.slice(-2).map(x => ({
+            id: x.id,
+            type: 'reparacao',
+            equipmentName: `Equip. ${x.id}`,
+            date: new Date(x.dataEnvioReparacao),
+            user: `Técnico ${x.tecnicoGSIId}`,
+            status: 'Em Reparação'
+          }))
+        );
+        this.recentActivities = atividades.sort((a, b) => b.date.getTime() - a.date.getTime());
+      });
+    });
+  }
+
+  calcularTrendMensal(dados: any[]): number[] {
+    const now = new Date();
+    const meses: number[] = Array(6).fill(0);
+
+    dados.forEach(d => {
+      const data = new Date(d.dataAlocacao || d.dataEnvioReparacao || d.dataDevolucao);
+      const diffMeses = (now.getFullYear() - data.getFullYear()) * 12 + now.getMonth() - data.getMonth();
+      const index = 5 - diffMeses;
+      if (index >= 0 && index < 6) meses[index]++;
+    });
+
+    return meses;
+  }
+
+  initCharts(): void {
+    this.initPieChart();
+    this.initBarChart();
+    this.initAllocationTrendChart();
+    this.initRepairTrendChart();
+    this.initReturnTrendChart();
+  }
+
+  initPieChart(): void {
+    const ctx = this.pieChartRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const colors = [
+      'rgba(76, 175, 80, 0.7)',  // Verde para Alocações
+      'rgba(255, 193, 7, 0.7)',  // Amarelo para Reparações
+      'rgba(33, 150, 243, 0.7)', // Azul para Devoluções
+      'rgba(244, 67, 54, 0.7)'   // Vermelho para Baixas
+    ];
+
+    this.charts['pie'] = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: this.allocationTypes.map(x => x.label),
+        datasets: [{
+          data: this.allocationTypes.map(x => x.count),
+          backgroundColor: colors,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+      }
+    });
+  }
+
+  initBarChart(): void {
+    const ctx = this.barChartRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+
+    const gradients = this.equipmentByStatus.map((_, index) => {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      
+      // Cores diferentes para cada status
+      switch (index) {
+        case 0: // NOVO
+          gradient.addColorStop(0, 'rgba(76, 175, 80, 0.9)');
+          gradient.addColorStop(1, 'rgba(76, 175, 80, 0.4)');
+          break;
+        case 1: // BOM
+          gradient.addColorStop(0, 'rgba(33, 150, 243, 0.9)');
+          gradient.addColorStop(1, 'rgba(33, 150, 243, 0.4)');
+          break;
+        case 2: // AVARIADO
+          gradient.addColorStop(0, 'rgba(255, 193, 7, 0.9)');
+          gradient.addColorStop(1, 'rgba(255, 193, 7, 0.4)');
+          break;
+        case 3: // OBSOLETO
+          gradient.addColorStop(0, 'rgba(244, 67, 54, 0.9)');
+          gradient.addColorStop(1, 'rgba(244, 67, 54, 0.4)');
+          break;
+        default:
+          gradient.addColorStop(0, 'rgba(63, 81, 181, 0.9)');
+          gradient.addColorStop(1, 'rgba(63, 81, 181, 0.4)');
+      }
+      
+      return gradient;
+    });
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: this.equipmentByStatus.map(x => x.status),
+        datasets: [{
+          label: 'Quantidade',
+          data: this.equipmentByStatus.map(x => x.count),
+          backgroundColor: gradients,
+          borderWidth: 1,
+          borderColor: gradients.map(g => g.toString().replace('0.4', '0.8')),
+          borderRadius: 6,
+          hoverBackgroundColor: gradients.map(g => g.toString().replace('0.4', '0.6'))
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: { size: 14, weight: 'bold' },
+            bodyFont: { size: 13 },
+            padding: 12,
+            displayColors: false,
+            callbacks: {
+              label: (context) => {
+                return `Quantidade: ${context.parsed.y} equipamentos`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { 
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              drawBorder: false
+            },
+            ticks: {
+              font: { weight: '500' }
+            }
+          },
+          x: { 
+            grid: { display: false },
+            ticks: {
+              font: { weight: '500' }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  initAllocationTrendChart(): void {
+    if (!this.lineChartRef) return;
+    
+    const ctx = this.lineChartRef.nativeElement.getContext('2d');
+    if (!ctx) return;
+    
+    this.charts['allocationTrend'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: this.months,
+        datasets: [{
+          label: 'Alocações',
+          data: this.allocationTrend,
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          y: { beginAtZero: true },
+          x: { grid: { display: false } }
+        },
+        animation: { duration: 1500 }
+      }
+    });
+  }
+  
+  initRepairTrendChart(): void {
+    if (!this.lineChart2Ref) return;
+    
+    const ctx = this.lineChart2Ref.nativeElement.getContext('2d');
+    if (!ctx) return;
+    
+    this.charts['repairTrend'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: this.months,
+        datasets: [{
+          label: 'Reparações',
+          data: this.repairTrend,
+          borderColor: '#FFC107',
+          backgroundColor: 'rgba(255, 193, 7, 0.1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true },
+          x: { grid: { display: false } }
+        },
+        animation: { duration: 1500 }
+      }
+    });
+  }
+  
+  initReturnTrendChart(): void {
+    if (!this.lineChart3Ref) return;
+    
+    const ctx = this.lineChart3Ref.nativeElement.getContext('2d');
+    if (!ctx) return;
+    
+    this.charts['returnTrend'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: this.months,
+        datasets: [{
+          label: 'Devoluções',
+          data: this.returnTrend,
+          borderColor: '#2196F3',
+          backgroundColor: 'rgba(33, 150, 243, 0.1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true },
+          x: { grid: { display: false } }
+        },
+        animation: { duration: 1500 }
+      }
+    });
+  }
+  
+
+  
+  animateChart(): void {
+    // Anima todos os gráficos de tendência
+    if (this.charts['allocationTrend']) {
+      this.charts['allocationTrend'].update();
+    }
+    
+    if (this.charts['repairTrend']) {
+      this.charts['repairTrend'].update();
+    }
+    
+    if (this.charts['returnTrend']) {
+      this.charts['returnTrend'].update();
+    }
+  }
+  
+
+
+  getAllocatedPercentage(): string {
+    return ((this.equipmentStats.allocated / this.equipmentStats.total) * 100 || 0).toFixed(1);
+  }
+
+  getRepairPercentage(): string {
+    return ((this.equipmentStats.inRepair / this.equipmentStats.total) * 100 || 0).toFixed(1);
+  }
+
+  getAvailablePercentage(): string {
+    return ((this.equipmentStats.available / this.equipmentStats.total) * 100 || 0).toFixed(1);
+  }
+
+  getStatusClass(type: string): string {
+    switch (type) {
+      case 'alocacao': return 'status-allocated';
+      case 'reparacao': return 'status-repair';
+      case 'devolucao': return 'status-returned';
+      case 'baixa': return 'status-written-off';
+      default: return '';
+    }
+  }
+
+  getStatusIcon(type: string): string {
+    switch (type) {
+      case 'alocacao': return 'assignment_turned_in';
+      case 'reparacao': return 'build';
+      case 'devolucao': return 'assignment_return';
+      case 'baixa': return 'delete_forever';
+      default: return 'info';
+    }
+  }
+
+  getStatusBadgeClass(type: string): string {
+    switch (type) {
+      case 'alocacao': return 'badge-success';
+      case 'reparacao': return 'badge-warning';
+      case 'devolucao': return 'badge-info';
+      case 'baixa': return 'badge-danger';
+      default: return '';
+    }
+  }
+
+  /**
+   * Obtém o texto de status para exibição
+   */
+  getStatusText(activity: Activity): string {
+    return activity.status;
+  }
+
+  /**
+   * Formata a data da atividade para exibição
+   * @param activityDate Data da atividade
+   * @returns String formatada com tempo relativo ou data completa
+   */
+  formatActivityDate(activityDate: Date): string {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - activityDate.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+      return 'Agora mesmo';
+    }
+    
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} min atrás`;
+    }
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+      return `${diffInHours}h atrás`;
+    }
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) {
+      return `${diffInDays}d atrás`;
+    }
+    
+    return this.datePipe.transform(activityDate, 'dd/MM/yyyy HH:mm') || '';
+  }
+}

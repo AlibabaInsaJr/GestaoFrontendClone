@@ -1,0 +1,717 @@
+// Variáveis
+$primary-color: #2563eb;
+$secondary-color: #7c3aed;
+$success-color: #10b981;
+$error-color: #ef4444;
+$warning-color: #f59e0b;
+
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
+$gray-200: #e5e7eb;
+$gray-300: #d1d5db;
+$gray-400: #9ca3af;
+$gray-500: #6b7280;
+$gray-600: #4b5563;
+$gray-700: #374151;
+$gray-800: #1f2937;
+$gray-900: #111827;
+
+$white: #ffffff;
+$black: #000000;
+
+// Mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin transition($property: all, $duration: 0.2s, $timing: ease) {
+  transition: $property $duration $timing;
+}
+
+@mixin gradient-bg($color1, $color2) {
+  background: linear-gradient(135deg, $color1 0%, $color2 100%);
+}
+
+@mixin shadow($level: 1) {
+  @if $level == 1 {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  } @else if $level == 2 {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  } @else if $level == 3 {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  } @else if $level == 4 {
+    box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  }
+}
+
+// Container principal com efeitos de background
+.login-container {
+  min-height: 100vh;
+  @include flex-center;
+  padding: 1rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+  overflow: hidden;
+  
+  // Background principal com gradiente animado
+  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  
+  // Overlay para suavizar o background
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba($white, 0.1);
+    /* Removido efeito de desfoque */
+    z-index: 1;
+  }
+  
+  // Efeitos de partículas flutuantes
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba($white, 0.1) 2px, transparent 2px),
+      radial-gradient(circle at 80% 20%, rgba($white, 0.15) 1px, transparent 1px),
+      radial-gradient(circle at 40% 40%, rgba($white, 0.1) 1.5px, transparent 1.5px),
+      radial-gradient(circle at 60% 70%, rgba($white, 0.08) 1px, transparent 1px),
+      radial-gradient(circle at 90% 90%, rgba($white, 0.12) 2px, transparent 2px);
+    background-size: 200px 200px, 150px 150px, 300px 300px, 250px 250px, 180px 180px;
+    animation: floatingParticles 20s linear infinite;
+    z-index: 2;
+  }
+}
+
+// Formas geométricas flutuantes
+.login-container {
+  .floating-shape {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba($white, 0.05);
+    /* Removido efeito de desfoque */
+    animation: float 6s ease-in-out infinite;
+    
+    &:nth-child(1) {
+      width: 80px;
+      height: 80px;
+      top: 10%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+    
+    &:nth-child(2) {
+      width: 120px;
+      height: 120px;
+      top: 70%;
+      right: 10%;
+      animation-delay: 2s;
+    }
+    
+    &:nth-child(3) {
+      width: 60px;
+      height: 60px;
+      bottom: 20%;
+      left: 20%;
+      animation-delay: 4s;
+    }
+    
+    &:nth-child(4) {
+      width: 100px;
+      height: 100px;
+      top: 30%;
+      right: 30%;
+      animation-delay: 1s;
+    }
+  }
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 28rem;
+  @include flex-center;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+}
+
+// Header com logo
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  .logo-container {
+    @include flex-center;
+    margin-bottom: 1rem;
+  }
+
+  .logo-icon {
+    @include flex-center;
+    width: auto;
+    height: auto;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    position: relative;
+    overflow: visible;
+
+    &::before { content: none; }
+
+    .logo-image {
+      width: 6rem;  // aumentar para visibilidade
+      height: auto;
+      object-fit: contain;
+      position: relative;
+      z-index: 2;
+    }
+  }
+
+  .system-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: $white;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba($black, 0.1);
+  }
+
+  .system-subtitle {
+    color: rgba($white, 0.9);
+    font-size: 1rem;
+    margin: 0;
+    line-height: 1.5;
+    text-shadow: 0 1px 2px rgba($black, 0.1);
+  }
+}
+
+// Card do formulário com efeitos glassmorphism
+.login-card {
+  width: 100%;
+  background: rgba($white, 0.25);
+  /* Removido efeito de desfoque */
+  border-radius: 1.5rem;
+  @include shadow(4);
+  border: 1px solid rgba($white, 0.3);
+  overflow: hidden;
+  position: relative;
+  
+  // Efeito de borda brilhante
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba($white, 0.6), transparent);
+    animation: borderGlow 2s ease-in-out infinite alternate;
+  }
+  
+  // Reflexo interno
+  &::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    right: 1px;
+    height: 50%;
+    background: linear-gradient(180deg, rgba($white, 0.1) 0%, transparent 100%);
+    border-radius: 1.5rem 1.5rem 0 0;
+    pointer-events: none;
+  }
+}
+
+.card-header {
+  padding: 1.5rem 1.5rem 0 1.5rem;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $gray-900;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .card-description {
+    color: $gray-600;
+    font-size: 0.875rem;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+.card-content {
+  padding: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+// Formulário
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &.checkbox-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    padding-top: 0.5rem;
+  }
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $gray-700;
+  margin: 0;
+}
+
+// Input wrapper e ícones
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .input-icon {
+    position: absolute;
+    left: 0.75rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: $gray-400;
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.6875rem 1rem;
+  padding-left: 2.5rem;
+  border: 2px solid rgba($white, 0.3);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  @include transition(all, 0.3s, ease);
+  background: rgba($white, 0.9);
+  /* Removido efeito de desfoque */
+  color: $gray-900;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba($primary-color, 0.1), 0 0 20px rgba($primary-color, 0.1);
+    background: rgba($white, 0.95);
+  }
+
+  &.error {
+    border-color: $error-color;
+    
+    &:focus {
+      border-color: $error-color;
+      box-shadow: 0 0 0 3px rgba($error-color, 0.1);
+    }
+  }
+
+  &::placeholder {
+    color: $gray-400;
+  }
+
+  &.password-input {
+    padding-right: 3rem;
+  }
+}
+
+// Toggle de senha
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: $gray-400;
+  @include transition(all, 0.2s, ease);
+  z-index: 2;
+  border-radius: 0.25rem;
+
+  &:hover {
+    color: $gray-600;
+    background: rgba($gray-100, 0.5);
+  }
+
+  &:focus {
+    outline: none;
+    color: $gray-600;
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+// Mensagens de erro
+.error-message {
+  color: $error-color;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+// Checkbox customizado
+.checkbox-label {
+  @include flex-center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: $gray-700;
+  user-select: none;
+}
+
+.checkbox-input {
+  display: none;
+
+  &:checked + .checkbox-custom {
+    background-color: $primary-color;
+    border-color: $primary-color;
+    box-shadow: 0 0 10px rgba($primary-color, 0.3);
+
+    &::after {
+      opacity: 1;
+    }
+  }
+}
+
+.checkbox-custom {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid $gray-300;
+  border-radius: 0.25rem;
+  position: relative;
+  @include transition(all, 0.3s, ease);
+  flex-shrink: 0;
+  background: rgba($white, 0.9);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.5rem;
+    height: 0.25rem;
+    border: 2px solid $white;
+    border-top: none;
+    border-right: none;
+    transform: translate(-50%, -60%) rotate(-45deg);
+    opacity: 0;
+    @include transition(opacity, 0.2s, ease);
+  }
+}
+
+.checkbox-text {
+  line-height: 1.4;
+}
+
+// Botão de login com efeitos
+.login-button {
+  width: 100%;
+  padding: 0.6875rem 1rem;
+  @include gradient-bg($primary-color, $secondary-color);
+  color: $white;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  @include transition(all, 0.3s, ease);
+  margin-top: 0.5rem;
+  @include shadow(2);
+  position: relative;
+  overflow: hidden;
+  
+  // Efeito de onda no clique
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba($white, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    @include transition(all, 0.6s, ease);
+  }
+  
+  &:active::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    @include shadow(3);
+    box-shadow: 0 10px 25px rgba($primary-color, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .button-text {
+    display: block;
+    position: relative;
+    z-index: 2;
+  }
+}
+
+// Loading state
+.loading-content {
+  @include flex-center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+// Footer do card
+.card-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba($gray-200, 0.5);
+  position: relative;
+  z-index: 2;
+
+  .security-text {
+    text-align: center;
+    font-size: 0.875rem;
+    color: $gray-500;
+    margin: 0;
+  }
+}
+
+// Footer da página
+.page-footer {
+  text-align: center;
+  margin-top: 2rem;
+
+  .copyright {
+    font-size: 0.875rem;
+    color: rgba($white, 0.8);
+    margin: 0;
+    line-height: 1.4;
+    text-shadow: 0 1px 2px rgba($black, 0.1);
+  }
+}
+
+// Animações
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes floatingParticles {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(120deg);
+  }
+  66% {
+    transform: translateY(5px) rotate(240deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  50% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+}
+
+@keyframes borderGlow {
+  0% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsividade
+@media (max-width: 640px) {
+  .login-container {
+    padding: 0.5rem;
+  }
+
+  .login-header {
+    margin-bottom: 1.5rem;
+
+    .system-title {
+      font-size: 1.5rem;
+    }
+
+    .system-subtitle {
+      font-size: 0.875rem;
+    }
+  }
+
+  .card-content {
+    padding: 1rem;
+  }
+
+  .card-header {
+    padding: 1rem 1rem 0 1rem;
+
+    .card-title {
+      font-size: 1.25rem;
+    }
+  }
+
+  .page-footer {
+    margin-top: 1.5rem;
+
+    .copyright {
+      font-size: 0.8125rem;
+    }
+  }
+}
+
+// Animações de entrada
+.login-wrapper {
+  animation: slideUp 0.8s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-card {
+  animation: fadeIn 1s ease-out 0.3s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Estados de foco melhorados
+.form-input:focus,
+.checkbox-custom:focus-within,
+.login-button:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+// Melhorias de acessibilidade
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// Print styles
+@media print {
+  .login-container {
+    background: $white;
+    
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+  
+  .login-card {
+    @include shadow(0);
+    border: 1px solid $gray-300;
+    background: $white;
+  }
+}
+
+// Efeitos para telas de alta resolução
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .login-card {
+    /* Removido efeito de desfoque */
+  }
+  
+  .form-input {
+    /* Removido efeito de desfoque */
+  }
+}

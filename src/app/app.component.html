@@ -1,0 +1,17 @@
+<ng-container *ngIf="showSidebar; else loginLayout">
+  <!-- Layout for pages with sidebar -->
+  <div class="layout">
+    <app-sidebar></app-sidebar>
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</ng-container>
+
+<!-- Layout for login page (no sidebar) -->
+<ng-template #loginLayout>
+  <router-outlet></router-outlet>
+</ng-template>
+
+<!-- Loading overlay global -->
+<app-loading-overlay></app-loading-overlay>

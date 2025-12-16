@@ -1,0 +1,694 @@
+.equipamentos-page {
+  background-color: #f8fafc;
+  padding: 2rem;
+  min-height: 100vh;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  font-family: 'Century Gothic', 'CenturyGothic', 'AppleGothic', 'Segoe UI', sans-serif;
+  color: #1e293b;
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+
+  .filtros {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+    .report-selector {
+      h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+
+        .checkbox-item {
+          label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background-color: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            font-weight: 500;
+
+            &:hover {
+              background-color: #e2e8f0;
+              border-color: #2563eb;
+            }
+
+            input[type="checkbox"] {
+            /* Removido efeito de transformação de escala */
+            accent-color: #2563eb;
+          }
+
+            i {
+              color: #2563eb;
+              font-size: 1rem;
+            }
+          }
+        }
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+
+      .novo-btn {
+        padding: 0.6rem 1.2rem;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background-color 0.3s;
+
+        &:hover {
+          background-color: #1d4ed8;
+        }
+      }
+
+      .export-btn {
+        padding: 0.6rem 1.2rem;
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background-color 0.3s;
+
+        &:hover {
+          background-color: #b91c1c;
+        }
+      }
+    }
+  }
+
+  .tabela-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 6px;
+
+    .report-results {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+
+      h4 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i {
+          color: #2563eb;
+        }
+      }
+
+      .report-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        .report-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem;
+          background-color: #f0f9ff;
+          border: 1px solid #bae6fd;
+          border-radius: 6px;
+          font-size: 0.95rem;
+          color: #0c4a6e;
+
+          i {
+            color: #059669;
+            font-size: 1rem;
+          }
+        }
+      }
+
+      /* Títulos e tabelas novas */
+      .table-title {
+        margin: 1rem 0 0.5rem 0;
+        font-weight: 600;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        i { color: #2563eb; }
+      }
+
+      .table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+      }
+
+      table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+
+        thead th {
+          background: #f1f5f9;
+          color: #1e293b;
+          font-weight: 600;
+          text-align: left;
+          padding: 0.6rem 0.75rem;
+          border-bottom: 1px solid #e2e8f0;
+          white-space: nowrap;
+        }
+
+        tbody td {
+          padding: 0.55rem 0.75rem;
+          border-bottom: 1px solid #e2e8f0;
+          color: #334155;
+        }
+
+        tbody tr:nth-child(even) {
+          background: #f8fafc;
+        }
+
+        tbody tr:hover {
+          background: #eef2ff;
+        }
+      }
+    }
+  }
+
+  // Estilos para o template PDF
+  .pdf-template {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    font-family: 'Century Gothic', 'CenturyGothic', 'AppleGothic', 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: #333;
+    padding: 20mm;
+    box-sizing: border-box;
+
+    .pdf-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #2563eb;
+
+      .pdf-logo {
+        margin-right: 20px;
+
+        .logo-pdf {
+          width: 120px; /* antes: 75px */
+          height: auto; /* antes: 75px */
+          object-fit: contain;
+        }
+      }
+
+      .pdf-title {
+        flex: 1;
+
+        .pdf-org {
+          font-size: 14px;
+          color: #1e293b;
+          line-height: 1.6;
+        }
+      }
+    }
+
+    .pdf-report-title {
+      text-align: center;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 10px 0 30px 0;
+    }
+
+    .pdf-content {
+      margin-bottom: 40px;
+
+      .pdf-summary {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border-left: 4px solid #2563eb;
+
+        h3 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1e293b;
+          margin: 0 0 15px 0;
+        }
+
+        p {
+          font-size: 14px;
+          color: #475569;
+          margin: 8px 0;
+          line-height: 1.5;
+
+          strong {
+            color: #1e293b;
+          }
+        }
+      }
+
+      .pdf-data {
+        h3 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1e293b;
+          margin: 0 0 20px 0;
+          padding-bottom: 10px;
+          border-bottom: 2px solid #e2e8f0;
+        }
+
+        .pdf-report-list {
+          .pdf-report-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border-left: 3px solid #059669;
+
+            .item-number {
+              font-weight: 600;
+              margin-right: 10px;
+              min-width: 30px;
+            }
+
+            .item-content {
+              font-size: 14px;
+              color: #374151;
+              line-height: 1.4;
+              flex: 1;
+            }
+          }
+        }
+      }
+    }
+
+    .pdf-footer {
+      position: absolute;
+      bottom: 20mm;
+      left: 20mm;
+      right: 20mm;
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+
+      p {
+        font-size: 12px;
+        color: #64748b;
+        margin: 5px 0;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+/* Loader de relatório removido */
+
+// Área útil entre RELATÓRIO e RODAPÉ
+.content-container {
+  position: relative;
+  min-height: 400px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+// Tipografia e estrutura
+.content-container h2 {
+  font-size: 18px;
+  color: #1e3a8a;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.content-container h2 + h2 {
+  margin-top: 30px; // exceto o primeiro, o segundo em diante terá margem superior
+}
+
+.content-container h3 {
+  font-size: 14px;
+  color: #374151;
+  margin: 20px 0 10px 0;
+  font-weight: 600;
+}
+
+.content-container p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #374151;
+  margin-bottom: 15px;
+}
+
+.indicadores-box {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f9fafb;
+  border-left: 4px solid #1e3a8a;
+}
+
+.indicadores-box p {
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.indicadores-box p:last-child {
+  margin-bottom: 0;
+}
+
+// Elementos posicionados por coordenadas (aproximadas)
+.svg-logo {
+  position: absolute;
+  left: 80px; // X: ~60-100px
+  top: 90px;  // Y: ~70-130px
+  width: 140px;
+  height: auto;
+}
+
+.header-inst {
+  position: absolute;
+  left: 80px; // X: ~60-550px (lado esquerdo)
+  top: 155px; // Y: ~145-175px
+  width: 470px;
+  font-size: 12px;
+  color: #111827;
+}
+
+.title-relatorio {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 233px; // Y: ~233px
+  font-size: 30px; // 28-32pt aproximado
+  font-weight: 700;
+  color: #000000;
+}
+
+.resumo-box {
+  position: absolute;
+  left: 60px; // X: ~60-557px
+  top: 290px; // Y: ~270-330px
+  width: 500px;
+  padding: 15px;
+  background: #f9fafb;
+  border-left: 4px solid #1e3a8a;
+}
+
+// Tabela com colunas alinhadas pelos X aproximados
+.tabela-relatorio {
+  position: absolute;
+  left: 58px;
+  top: 420px; // Y: ~410-600px+
+  width: 500px; // até ~557px à direita
+}
+
+.tabela-header,
+.tabela-row {
+  display: grid;
+  grid-template-columns: 60px 150px 160px 130px; // colunas aprox. (Nº, Modelo, Nº Série, Estado)
+  column-gap: 8px;
+  align-items: center;
+}
+
+.tabela-header {
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.tabela-row {
+  font-size: 12px;
+  height: 26px; // ~25-30px por linha
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.col-nr { /* X: 64-85px */ }
+.col-modelo { /* X: 106-240px */ }
+.col-serie { /* X: 254-400px */ }
+.col-estado { /* X: 409-557px */ }
+
+// Rodapé SVG posicionado
+.svg-footer {
+  position: absolute;
+  left: 280px; // X: ~248-312px
+  bottom: 20px;
+  width: 120px;
+  height: auto;
+}
+
+// ... existing code ...
+// Estilos da barra de filtro de relatório
+.relatorio-filter-bar {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  .date-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: #374151;
+    }
+
+    input[type='date'] {
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.2s ease;
+
+      &:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+
+      .btn {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        transition: transform 0.05s ease, background 0.2s ease;
+
+        &.apply {
+          background: #10b981; // emerald
+          color: #ffffff;
+        }
+
+        &.generate {
+          background: #2563eb; // blue
+          color: #ffffff;
+        }
+
+        &:active {
+          transform: translateY(1px);
+        }
+      }
+    }
+  }
+
+  .period-hint {
+    font-size: 0.95rem;
+    color: #374151;
+  }
+}
+.equipamentos-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+/* Melhorias visuais gerais */
+.filtros {
+  display: grid;
+  gap: 16px;
+}
+
+.report-selector {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+
+  h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    color: #111827;
+  }
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.checkbox-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.05s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+  }
+  &:active { transform: translateY(1px); }
+
+  input[type='checkbox'] { accent-color: #2563eb; }
+
+  i { color: #2563eb; }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+
+  .novo-btn, .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.05s ease;
+  }
+
+  .novo-btn {
+    background: #2563eb;
+    color: #ffffff;
+    &:hover { box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  }
+  .export-btn {
+    background: #10b981;
+    color: #ffffff;
+    &:hover { box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+  }
+  .novo-btn:active, .export-btn:active { transform: translateY(1px); }
+}
+
+.tabela-wrapper {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.report-results h4 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: #111827;
+}
+.report-list {
+  display: grid;
+  gap: 8px;
+}
+.report-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .checkbox-grid { grid-template-columns: 1fr; }
+  .action-buttons { flex-direction: column; }
+}
+
+/* Overrides solicitados: inputs de data mais compactos e container mais largo */
+.relatorio-filter-bar .date-filter input[type='date'] {
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  min-height: 34px;
+}
+.relatorio-filter-bar .date-filter input[type='date']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  transform: scale(0.85);
+}
+.relatorio-filter-bar .actions .btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+/* Aumentar a largura �til do container da p�gina de Relat�rios */
+.equipamentos-page { max-width: 1400px; padding: 16px; }

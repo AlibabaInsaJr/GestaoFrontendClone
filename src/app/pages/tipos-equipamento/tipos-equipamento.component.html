@@ -1,0 +1,77 @@
+<div class="equipamentos-page">
+  <!-- Header -->
+  <h1>Tipos de Equipamento</h1>
+
+  <!-- Filtros -->
+  <div class="filtros">
+    <ng-select [items]="tiposEquipamento" bindLabel="nome" bindValue="nome" [(ngModel)]="filtroNome" placeholder="Filtrar pelo nome" [clearable]="true"></ng-select>
+
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Novo Tipo
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Descrição</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tipo of getTiposFiltrados()">
+          <td>{{ tipo.id }}</td>
+          <td>{{ tipo.nome }}</td>
+          <td>{{ tipo.descricao }}</td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(false, tipo)" aria-label="Editar">
+              <i class="fas fa-edit" aria-hidden="true"></i>
+            </button>
+            <button class="btn-delete" (click)="excluir(tipo.id)" aria-label="Apagar">
+              <i class="fas fa-trash-alt" aria-hidden="true"></i>
+            </button>
+            <button class="btn-view" [routerLink]="['/tipos-equipamento', tipo.id]" aria-label="Visualizar">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal modern-form">
+      <h2>{{ editando ? 'Editar' : 'Novo' }} Tipo de Equipamento</h2>
+
+      <div class="modal-figure">
+        <img src="assets/TipoDeEquipamento.png" alt="Ilustração Tipo de Equipamento" class="modal-illustration" />
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <div>
+            <label>Nome:</label>
+            <input type="text" formControlName="nome" />
+            <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Campo obrigatório</small>
+          </div>
+
+          <div>
+            <label>Descrição:</label>
+            <input type="text" formControlName="descricao" />
+            <small *ngIf="form.get('descricao')?.touched && form.get('descricao')?.invalid" class="erro">Campo obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

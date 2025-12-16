@@ -1,0 +1,81 @@
+<div class="detalhes-baixa-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-trash-can"></i>
+      Detalhes da Baixa
+    </h1>
+  </div>
+
+  <div class="cards-grid" *ngIf="baixa">
+    <!-- Resumo da Baixa -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-file-circle-check"></i> Resumo da Baixa</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID:</span> {{ baixa.id }}</p>
+        <p><span>Data:</span> {{ baixa.dataBaixa | date: 'dd/MM/yyyy' }}</p>
+      </div>
+    </div>
+
+    <!-- Entregadores/Recebedores -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-user-group"></i> Entregadores/Recebedores</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Entregador:</span> {{ getNomeUtilizador(baixa.utilizadorEntregouId) }}</p>
+        <p><span>Recebedor:</span> {{ getNomeUtilizador(baixa.utilizadorRecebeuId) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equipamentos declarados -->
+  <div *ngIf="itens.length > 0; else semItens" class="table-block">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-layer-group"></i> Equipamentos Declarados como Baixa</h2>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-hashtag"></i> ID</th>
+            <th><i class="fa-solid fa-barcode"></i> Número de Série</th>
+            <th><i class="fa-solid fa-microchip"></i> Modelo</th>
+            <th><i class="fa-solid fa-signal"></i> Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of itens">
+            <td>{{ item.id }}</td>
+            <td>{{ getNumeroSerie(item.equipamentoId) }}</td>
+            <td>{{ getModeloNome(item.equipamentoId) }}</td>
+            <td>
+              <ng-container [ngSwitch]="item.novoEstado || equipamentosMap.get(item.equipamentoId)?.estado">
+                <span *ngSwitchCase="'BAIXADO'" class="estado-badge baixado">
+                  <i class="fa-solid fa-trash"></i> BAIXADO
+                </span>
+                <span *ngSwitchDefault class="estado-badge">
+                  {{ item.novoEstado || equipamentosMap.get(item.equipamentoId)?.estado || '—' }}
+                </span>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semItens>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Equipamentos Declarados como Baixa</h2>
+      </div>
+      <p class="sem-historico">Nenhum equipamento declarado.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+  </div>
+</div>

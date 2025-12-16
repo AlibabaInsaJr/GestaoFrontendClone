@@ -1,0 +1,72 @@
+<div class="file-upload-container">
+  <label class="file-upload-label">{{ label }}</label>
+  
+  <!-- Área de upload -->
+  <div class="file-upload-area" 
+       [class.drag-over]="isDragOver"
+       [class.disabled]="disabled"
+       [class.compact]="size === 'compact'"
+       [class.medium]="size === 'medium'"
+       [class.large]="size === 'large'"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event)"
+       (click)="fileInput.click()">
+    
+    <!-- Input file oculto -->
+    <input #fileInput
+           type="file"
+           [accept]="accept"
+           [disabled]="disabled"
+           (change)="onFileSelected($event)"
+           style="display: none;" />
+    
+    <!-- Estado: Nenhum arquivo selecionado -->
+    <div class="upload-prompt" *ngIf="!selectedFile && !fileUrl">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <div class="upload-content">
+        <p class="upload-text">{{ size === 'compact' ? 'Selecionar arquivo' : 'Clique para selecionar ou arraste o arquivo aqui' }}</p>
+        <p class="upload-hint" *ngIf="size !== 'compact'">{{ placeholder }}</p>
+        <p class="upload-formats" *ngIf="accept && size === 'large'">Formatos aceitos: {{ accept }}</p>
+      </div>
+    </div>
+    
+    <!-- Estado: Arquivo selecionado OU existente -->
+    <div class="file-selected" 
+         [class.compact]="size === 'compact'"
+         [class.medium]="size === 'medium'"
+         [class.large]="size === 'large'"
+         *ngIf="selectedFile || fileUrl">
+      <div class="file-info">
+        <i class="fas fa-file" [class]="getFileIcon()"></i>
+        <div class="file-details">
+          <span class="file-name" [title]="fileName">{{ getDisplayName() }}</span>
+          <span class="file-size" *ngIf="selectedFile && size !== 'compact' && showFileName">{{ formatFileSize(selectedFile.size) }}</span>
+        </div>
+      </div>
+      
+      <div class="file-actions">
+        <button type="button" 
+                class="btn-download" 
+                *ngIf="fileUrl"
+                (click)="downloadFile(); $event.stopPropagation()"
+                title="Baixar arquivo">
+          <i class="fas fa-download"></i>
+        </button>
+        
+        <button type="button" 
+                class="btn-remove" 
+                (click)="clearFile(); $event.stopPropagation()"
+                [disabled]="disabled"
+                title="Remover arquivo">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Indicador de arquivo obrigatório -->
+  <small class="required-indicator" *ngIf="required && !selectedFile && !fileName">
+    * Campo obrigatório
+  </small>
+</div>

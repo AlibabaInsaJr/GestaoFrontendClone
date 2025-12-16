@@ -1,0 +1,120 @@
+<h1>Reparações</h1>
+<div class="equipamentos-page">
+  <!-- Filtros -->ng   <div class="filtros">
+    <ng-select [items]="empresas" bindLabel="designacao" bindValue="id" [(ngModel)]="filtroEmpresa" placeholder="Empresa" [clearable]="true"></ng-select>
+
+    <ng-select [items]="tecnicos" bindLabel="nome" bindValue="id" [(ngModel)]="filtroTecnico" placeholder="Técnico GSI" [clearable]="true"></ng-select>
+
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Nova Reparação
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Empresa</th>
+          <th>Técnico GSI</th>
+          <th>Avaria</th>
+          <th>Data Envio Reparação</th>
+          <th>Data Prevista Devolução</th>
+          <th>Data Devolução</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of getReparacoesFiltradas()">
+          <td>{{ r.id }}</td>
+          <td>{{ getEmpresaNome(r.empresaId) }}</td>
+          <td>{{ getTecnicoNome(r.tecnicoGSIId) }}</td>
+          <td class="avaria-cell" [title]="r.avaria">{{ r.avaria }}</td>
+          <td>{{ r.dataEnvioReparacao | date:'dd/MM/yyyy' }}</td>
+          <td>{{ r.dataPrevistaDevolucao ? (r.dataPrevistaDevolucao | date:'dd/MM/yyyy') : '---' }}</td>
+          <td>{{ r.dataDevolucao ? (r.dataDevolucao | date:'dd/MM/yyyy') : '---' }}</td>
+          <td>
+            <button class="btn-edit" (click)="abrirModal(false, r)" title="Editar">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-delete" (click)="excluir(r.id)" title="Excluir">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+            <button class="btn-view" [routerLink]="['/reparacoes', r.id]" title="Ver detalhes">
+              <i class="fas fa-eye"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal de criação/edição -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Nova' }} Reparação</h2>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <!-- Primeira linha: Informações básicas -->
+          <div>
+            <label>Empresa Reparação: *</label>
+            <ng-select [items]="empresas" bindLabel="designacao" bindValue="id" formControlName="empresaId" placeholder="Selecione" [clearable]="true"></ng-select>
+            <small *ngIf="form.get('empresaId')?.touched && form.get('empresaId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Técnico GSI: *</label>
+            <ng-select [items]="tecnicos" bindLabel="nome" bindValue="id" formControlName="tecnicoGSIId" placeholder="Selecione" [clearable]="true"></ng-select>
+            <small *ngIf="form.get('tecnicoGSIId')?.touched && form.get('tecnicoGSIId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <!-- Segunda linha: Equipamento -->
+          <div>
+            <label>Marca do Equipamento: *</label>
+            <ng-select [items]="marcas" bindLabel="nome" bindValue="id" formControlName="marcaId" placeholder="Selecione" [clearable]="true"></ng-select>
+            <small *ngIf="form.get('marcaId')?.touched && form.get('marcaId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Equipamento para Reparação: *</label>
+            <ng-select [items]="equipamentosFiltrados" bindLabel="displayLabel" bindValue="id" [searchFn]="equipamentoSearchFn" notFoundText="Nenhum equipamento encontrado" formControlName="equipamentoId" placeholder="Selecione por Nº de Série ou Modelo" [clearable]="true" [disabled]="!form.get('marcaId')?.value"></ng-select>
+            <small class="info-text" *ngIf="!form.get('marcaId')?.value">Preencha primeiro a Marca para habilitar este campo.</small>
+            <small *ngIf="form.get('equipamentoId')?.touched && form.get('equipamentoId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <!-- Terceira linha: Datas -->
+          <div>
+            <label>Data de Envio para Reparação: *</label>
+              <input type="date" formControlName="dataEnvioReparacao" />
+            <small *ngIf="form.get('dataEnvioReparacao')?.touched && form.get('dataEnvioReparacao')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Data Prevista Devolução:</label>
+            <input type="date" formControlName="dataPrevistaDevolucao" />
+          </div>
+
+          <!-- Quarta linha: Data devolução e avaria -->
+          <div>
+            <label>Data Devolução:</label>
+            <input type="date" formControlName="dataDevolucao" readonly />
+            <small class="info-text">Este campo é preenchido automaticamente ao marcar equipamentos como devolvidos</small>
+          </div>
+
+          <div class="avaria-field">
+            <label>Avaria: *</label>
+            <textarea formControlName="avaria" rows="3" placeholder="Descreva a avaria detalhadamente..."></textarea>
+            <small *ngIf="form.get('avaria')?.touched && form.get('avaria')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

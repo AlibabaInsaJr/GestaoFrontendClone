@@ -1,0 +1,123 @@
+<div class="equipamentos-page">
+  <!-- Header -->
+   <h1>Equipamentos</h1>
+    <!-- Filtros -->
+    <div class="filtros">
+      <ng-select [items]="modelos" bindLabel="nome" bindValue="id" [(ngModel)]="filtroModelo" placeholder="Modelo" [clearable]="true"></ng-select>
+
+      <ng-select [items]="tipos" bindLabel="nome" bindValue="id" [(ngModel)]="filtroTipo" placeholder="Tipo" [clearable]="true"></ng-select>
+
+      <ng-select [items]="aquisicoes" bindLabel="numeroConcurso" bindValue="id" [(ngModel)]="filtroAquisicao" placeholder="Aquisição" [clearable]="true"></ng-select>
+
+      <!-- Novo filtro por Estado do Equipamento -->
+      <ng-select [items]="estados" [(ngModel)]="filtroEstado" placeholder="Estado" [clearable]="true"></ng-select>
+
+      <button class="novo-btn" (click)="abrirModal(true)">
+        <i class="fas fa-plus"></i> Novo Equipamento
+      </button>
+    </div>
+  
+    <!-- Tabela -->
+    <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Nº Série</th>
+          <th>Modelo</th>
+          <th>Tipo de Equipamento</th>
+          <th>Aquisição</th>
+          <th>Data Registo</th>
+          <th>Estado</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let eq of getEquipamentosFiltrados()">
+          <td>{{ eq.id }}</td>
+          <td>{{ eq.numeroSerie }}</td>
+          <td>{{ getModeloNome(eq.modeloId) }}</td>
+          <td>{{ getTipoNome(eq.tipoEquipamentoId) }}</td>
+          <td>{{ getAquisicaoNrConcurso(eq.aquisicaoId) }}</td>
+          <td>{{ eq.dataRegisto }}</td>
+          <td>
+            <span class="estado-badge" [ngClass]="getEstadoAtual(eq)">
+              {{ getEstadoAtual(eq) }}
+            </span>
+          </td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="editarModal(false, eq)" aria-label="Editar">
+              <i class="fas fa-edit" aria-hidden="true"></i>
+            </button>
+            <button class="btn-delete" (click)="excluir(eq.id)" aria-label="Apagar">
+              <i class="fas fa-trash-alt" aria-hidden="true"></i>
+            </button>
+            <button class="btn-view" [routerLink]="['/equipamentos', eq.id]" aria-label="Visualizar">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="paginacao-actions">
+      <button (click)="carregarEquipamentosPaginado()" [disabled]="loading || !hasMore">
+        {{ loading ? 'Carregando...' : (hasMore ? 'Carregar mais' : 'Todos carregados') }}
+      </button>
+      <span *ngIf="total > 0">Carregados {{ equipamentos.length }} de {{ total }}</span>
+    </div>
+    <div class="empty-state" *ngIf="!loading && equipamentos.length === 0">
+      Nenhum equipamento encontrado.
+    </div>
+  
+    <!-- Modal -->
+    <div class="modal-overlay" *ngIf="showModal">
+      <div class="modal modern-form">
+        <h2>{{ editando ? 'Editar' : 'Novo' }} Equipamento</h2>
+
+        <div class="modal-figure">
+          <img src="assets/NovoEquipameno.png" alt="Ilustração Novo Equipamento" class="modal-illustration" />
+        </div>
+  
+        <form [formGroup]="form" (ngSubmit)="salvar()">
+          <div class="form-grid">
+            <div>
+              <label>Modelo:</label>
+              <ng-select [items]="modelos" bindLabel="nome" bindValue="id" formControlName="modelo_id" placeholder="Selecione"></ng-select>
+              <small *ngIf="form.get('modelo_id')?.touched && form.get('modelo_id')?.invalid" class="erro">Obrigatório</small>
+            </div>
+  
+            <div>
+              <label>Tipo:</label>
+              <ng-select [items]="tipos" bindLabel="nome" bindValue="id" formControlName="tipoEquipamento_id" placeholder="Selecione"></ng-select>
+              <small *ngIf="form.get('tipoEquipamento_id')?.touched && form.get('tipoEquipamento_id')?.invalid" class="erro">Obrigatório</small>
+            </div>
+  
+            <div>
+              <label>Aquisição:</label>
+              <ng-select [items]="aquisicoes" bindLabel="descricao" bindValue="id" formControlName="aquisicao_id" placeholder="Selecione"></ng-select>
+              <small *ngIf="form.get('aquisicao_id')?.touched && form.get('aquisicao_id')?.invalid" class="erro">Obrigatório</small>
+            </div>
+  
+            <div>
+              <label>Número de Série:</label>
+              <input type="text" formControlName="numeroSerie" />
+              <small *ngIf="form.get('numeroSerie')?.touched && form.get('numeroSerie')?.invalid" class="erro">Obrigatório</small>
+            </div>
+  
+            <div>
+              <label>Data de Registo:</label>
+              <input type="date" formControlName="dataRegisto" />
+              <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
+            </div>
+          </div>
+  
+          <div class="modal-actions">
+            <button type="submit" [disabled]="form.invalid">Salvar</button>
+            <button type="button" (click)="fecharModal()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  

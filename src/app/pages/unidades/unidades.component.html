@@ -1,0 +1,63 @@
+<h1>Unidades</h1>
+<div class="equipamentos-page">
+
+  <div class="filtros">
+    <!-- Filtro por nome com ng-select (igual ao componente de Empresas) -->
+    <ng-select
+      [items]="unidades"
+      bindLabel="nome"
+      bindValue="id"
+      [(ngModel)]="filtroUnidadeId"
+      placeholder="Pesquisar por nome..."
+      [clearable]="true">
+    </ng-select>
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Nova unidade
+    </button>
+  </div>
+
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Nome</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let unidade of getUnidadesFiltradas()">
+          <td>{{ unidade.id }}</td>
+          <td>{{ unidade.nome }}</td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(false, unidade)"><i class="fas fa-edit"></i></button>
+            <button class="btn-delete" (click)="excluir(unidade.id)"><i class="fas fa-trash-alt"></i></button>
+            <button class="btn-view" [routerLink]="['/unidades', unidade.id]"><i class="fas fa-eye"></i></button>
+          </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Nova' }} Unidade</h2>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid single">
+          <div class="campo-nome">
+            <label>Nome</label>
+            <input type="text" formControlName="nome" />
+            <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,302 @@
+.equipamentos-page {
+  background-color: #f8fafc;
+  padding: 2rem;
+  min-height: 100vh;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e293b;
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Filtros em bloco elegante (mesmo estilo de Equipamentos) */
+  .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+    .novo-btn {
+      background-color: #22c55e; /* verde */
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+      cursor: pointer;
+    }
+    .novo-btn:hover { background-color: #16a34a; }
+    .novo-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35); }
+
+    input {
+      padding: 0.65rem 0.9rem;
+      font-size: 0.95rem;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background-color: #f9fafb;
+      color: #1f2937;
+      outline: none;
+      min-width: 260px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+
+      &:hover {
+        background-color: #f3f4f6;
+        border-color: #cbd5e1;
+      }
+
+      &:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        background-color: #ffffff;
+      }
+    }
+
+    .ng-select {
+      min-width: 220px;
+    }
+    .ng-select .ng-select-container {
+      padding: 0.25rem 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background-color: #f9fafb;
+      min-height: 40px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .ng-select .ng-select-container:hover {
+      background-color: #f3f4f6;
+      border-color: #cbd5e1;
+    }
+    .ng-select .ng-select-container:focus-within {
+      border-color: #4f46e5; /* mesma cor de foco usada em Equipamentos */
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+      background-color: #ffffff;
+    }
+    .ng-select .ng-value,
+    .ng-select .ng-placeholder {
+      color: #1f2937;
+      font-size: 0.95rem;
+    }
+    .ng-select .ng-arrow-wrapper,
+    .ng-select .ng-clear-wrapper {
+      color: #64748b;
+    }
+  }
+
+  .acoes button {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+  .acoes {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .acoes .btn-edit { color: #16a34a; }
+  .acoes .btn-edit:hover { color: #15803d; }
+  td.acoes .btn-edit i { color: #16a34a !important; }
+  td.acoes .btn-edit:hover i { color: #15803d !important; }
+
+  .acoes .btn-delete { color: #dc2626; }
+  .acoes .btn-delete:hover { color: #b91c1c; }
+  td.acoes .btn-delete i { color: #dc2626 !important; }
+  td.acoes .btn-delete:hover i { color: #b91c1c !important; }
+
+  .acoes .btn-view { color: #2563eb; }
+  .acoes .btn-view:hover { color: #1d4ed8; }
+  td.acoes .btn-view i { color: #2563eb !important; }
+  td.acoes .btn-view:hover i { color: #1d4ed8 !important; }
+
+  table tbody tr:nth-child(even) {
+    background-color: #f9fafb;
+  }
+
+  table tbody tr:hover {
+    background-color: #eef2ff;
+    transition: background-color 0.15s ease-in-out;
+  }
+
+/* Modal (mantém o mesmo estilo do Equipamentos) */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 2rem;
+  width: 500px;
+  max-width: 95vw;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+
+  h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    div {
+      display: flex;
+      flex-direction: column;
+
+      label { font-weight: 500; margin-bottom: 0.3rem; }
+
+      input {
+        padding: 0.55rem 0.75rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #1e293b;
+        outline: none;
+
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+      }
+    }
+  }
+
+  .modal.modern-form .form-grid div label {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.4rem;
+  }
+
+  .modal-figure { display: flex; justify-content: center; margin-bottom: 1rem; }
+  .modal-illustration {
+    width: 55%;
+    max-width: 320px;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    button {
+      padding: 0.6rem 1.4rem;
+      font-weight: 500;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+
+      &:first-child {
+        background: #2563eb;
+        color: white;
+        &:hover { background: #1e40af; }
+      }
+
+      &:last-child {
+        background: #e5e7eb;
+        color: #1f2937;
+        &:hover { background: #d1d5db; }
+      }
+    }
+  }
+}
+
+/* Mensagens de erro nos campos */
+.erro { color: #b91c1c; font-size: 0.85rem; margin-top: 0.25rem; }
+input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: #ef4444; background-color: #fef2f2; }
+
+@media (max-width: 768px) {
+  .filtros { flex-direction: column; align-items: stretch; }
+  .modal { width: 95vw; padding: 1rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  table { font-size: 0.85rem; }
+}
+
+/* Tabela com o mesmo estilo do componente Equipamentos */
+.equipamentos-page .tabela-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 1rem;
+  border-radius: 6px;
+  max-height: 60vh; /* scroll vertical */
+  overflow-y: auto;
+  position: relative;
+}
+
+.equipamentos-page table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(18, 18, 18, 0.05);
+  background-color: white;
+  min-width: 900px; /* igual Equipamentos */
+}
+
+.equipamentos-page table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #f1f5f9;
+}
+
+.equipamentos-page th,
+.equipamentos-page td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.75rem 1rem;
+}
+
+.equipamentos-page th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+  color: #091423;
+}
+
+.equipamentos-page td { color: #435671; }
+
+/* Listras e hover replicados */
+.equipamentos-page table tbody tr:nth-child(even) { background-color: #f9fafb; }
+.equipamentos-page table tbody tr:hover { background-color: #eef2ff; transition: background-color 0.15s ease-in-out; }

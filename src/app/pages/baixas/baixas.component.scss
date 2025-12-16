@@ -1,0 +1,305 @@
+.equipamentos-page {
+  background-color: #f8fafc;
+  padding: 2rem;
+  min-height: 100vh;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e293b;
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+
+  .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+    /* Estilo consistente com Devoluções para ng-select */
+    ng-select, .ng-select { min-width: 220px; }
+    .ng-select .ng-select-container {
+      min-height: 40px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+    }
+    .ng-select.ng-select-focused .ng-select-container {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+
+    .novo-btn {
+      padding: 0.6rem 1.2rem;
+      background-color: #10b981; /* Verde conforme pedido */
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+
+      i {
+        margin-right: 6px;
+      }
+
+      &:hover {
+        background-color: #059669;
+      }
+    }
+  }
+
+  .tabela-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 6px;
+    max-height: 60vh; /* Scroll vertical, filtros permanecem estáticos */
+    overflow-y: auto;
+    position: relative;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: white;
+    min-width: 900px;
+
+    thead th { position: sticky; top: 0; z-index: 2; }
+
+    th, td {
+      text-align: center;
+      vertical-align: middle;
+      padding: 0.75rem 1rem;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    td {
+      color: #475569;
+    }
+
+    td.acoes button { margin: 0 4px; }
+
+    button {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+
+      i { pointer-events: none; }
+    }
+
+    /* Cores das ações conforme solicitado */
+    .btn-edit { color: #16a34a; }
+    .btn-edit:hover { color: #15803d; }
+
+    .btn-delete { color: #dc2626; }
+    .btn-delete:hover { color: #b91c1c; }
+
+    .btn-view { color: #2563eb; }
+    .btn-view:hover { color: #1d4ed8; }
+
+    /* Zebra e hover */
+    tbody tr:nth-child(even) { background-color: #f9fafb; }
+    tbody tr:hover { background-color: #eef2ff; transition: background-color 0.2s ease; }
+  }
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #ffffff;
+  color: #1e293b;
+  padding: 2rem;
+  width: 500px;
+  max-width: 95vw;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  /* Removido efeito de desfoque */
+
+  h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+
+    div {
+      display: flex;
+      flex-direction: column;
+
+      label {
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+      }
+
+      input, select {
+        padding: 0.55rem 0.75rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #1e293b;
+        outline: none;
+
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+      }
+
+      /* ng-select dentro da modal: mesma altura e comportamento dos selects */
+      .ng-select {
+        width: 100%;
+      }
+      .ng-select .ng-select-container {
+        min-height: 40px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+      }
+      .ng-select.ng-select-focused .ng-select-container {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+      }
+    }
+  }
+
+  /* Estilo específico para a lista de equipamentos */
+  .equipamento-lista {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+
+  .equipamento-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+
+    &:hover {
+      background-color: #e0e7ff;
+    }
+
+    input[type='checkbox'] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+
+    button {
+      padding: 0.6rem 1.4rem;
+      font-weight: 500;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+
+      &:first-child {
+        background: #2563eb;
+        color: white;
+
+        &:hover {
+          background: #1e40af;
+        }
+      }
+
+      &:last-child {
+        background: #e5e7eb;
+        color: #1f2937;
+
+        &:hover {
+          background: #d1d5db;
+        }
+      }
+    }
+  }
+}
+
+/* Mensagens de erro */
+.erro {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+@media (max-width: 768px) {
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal {
+    width: 95vw;
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    font-size: 0.85rem;
+  }
+}

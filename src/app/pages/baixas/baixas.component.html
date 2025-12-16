@@ -1,0 +1,132 @@
+<h1>Baixas de Património</h1>
+
+<div class="equipamentos-page">
+  <!-- Filtros -->
+  <div class="filtros">
+    <!-- Filtros modernos com ng-select, estáticos acima da tabela -->
+    <ng-select
+      [items]="utilizadores"
+      bindLabel="nome"
+      bindValue="id"
+      [(ngModel)]="filtroUtilizador"
+      placeholder="Quem entregou..."
+      [clearable]="true">
+    </ng-select>
+
+    <ng-select
+      [items]="utilizadores"
+      bindLabel="nome"
+      bindValue="id"
+      [(ngModel)]="filtroRecebedor"
+      placeholder="Quem recebeu..."
+      [clearable]="true">
+    </ng-select>
+
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Nova Baixa
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Entregou</th>
+          <th>Recebeu</th>
+          <th>Data</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let b of getBaixasFiltradas()">
+          <td>{{ b.id }}</td>
+          <td>{{ getNomeUtilizador(b.utilizadorEntregouId) }}</td>
+          <td>{{ getNomeUtilizador(b.utilizadorRecebeuId) }}</td>
+          <td>{{ b.dataBaixa | date:'dd/MM/yyyy' }}</td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(false, b)"><i class="fas fa-edit"></i></button>
+            <button class="btn-delete" (click)="excluir(b.id)"><i class="fas fa-trash-alt"></i></button>
+            <button class="btn-view" [routerLink]="['/baixas', b.id]"><i class="fas fa-eye"></i></button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Nova' }} Baixa</h2>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <div>
+            <label>Entregador: *</label>
+            <ng-select
+              formControlName="utilizadorEntregouId"
+              [items]="utilizadores"
+              bindLabel="nome"
+              bindValue="id"
+              placeholder="Selecione o Utilizador"
+              [clearable]="true">
+            </ng-select>
+            <small *ngIf="form.get('utilizadorEntregouId')?.touched && form.get('utilizadorEntregouId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Recebedor: *</label>
+            <ng-select
+              formControlName="utilizadorRecebeuId"
+              [items]="utilizadores"
+              bindLabel="nome"
+              bindValue="id"
+              placeholder="Selecione o Técnico"
+              [clearable]="true">
+            </ng-select>
+            <small *ngIf="form.get('utilizadorRecebeuId')?.touched && form.get('utilizadorRecebeuId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Data:</label>
+            <input type="date" formControlName="dataBaixa" />
+            <small *ngIf="form.get('dataBaixa')?.touched && form.get('dataBaixa')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Estado da Baixa: *</label>
+            <ng-select
+              formControlName="novoEstado"
+              [items]="estadosBaixa"
+              placeholder="Selecione o Estado"
+              [clearable]="false">
+            </ng-select>
+            <small *ngIf="form.get('novoEstado')?.touched && form.get('novoEstado')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Equipamentos para Baixa:</label>
+            <div class="equipamento-lista">
+              <label *ngFor="let eq of equipamentos" class="equipamento-item">
+                <input
+                  type="checkbox"
+                  [value]="eq.numeroSerie"
+                  [checked]="selectedEquipamentos.includes(eq.numeroSerie)"
+                  (change)="toggleEquipamentoSelecionado(eq.numeroSerie, $event)"
+                />
+                <span>{{ eq.numeroSerie }} - {{ getModeloNome(eq.modeloId) }}</span>
+              </label>
+            </div>
+            <p><strong>Selecionados:</strong> {{ selectedEquipamentos.length }}</p>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

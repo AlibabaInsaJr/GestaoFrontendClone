@@ -1,0 +1,154 @@
+<div class="detalhes-alocacao-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-people-carry-box"></i>
+      Detalhes da Alocação
+    </h1>
+  </div>
+
+  <div class="cards-grid" *ngIf="alocacao">
+    <!-- Resumo da Alocação -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-file-circle-check"></i> Resumo da Alocação</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID:</span> {{ alocacao.id }}</p>
+        <p><span>Data de Alocação:</span> {{ alocacao.dataAlocacao | date: 'dd/MM/yyyy' }}</p>
+        <p><span>Período:</span> {{ alocacao.periodoAlocacao === 1 ? 'Determinado' : 'Indeterminado' }}</p>
+        <p>
+          <span>Guia:</span>
+          <a *ngIf="alocacao?.pathGuiaRecepcao && !alocacao.pathGuiaRecepcao.includes('placeholder')" [href]="toFileUrl(alocacao.pathGuiaRecepcao)" target="_blank">Abrir Guia</a>
+          <span *ngIf="!alocacao?.pathGuiaRecepcao || alocacao.pathGuiaRecepcao.includes('placeholder')">Não disponível</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Pessoas envolvidas -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-user-group"></i> Pessoas Envolvidas</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Beneficiário:</span> {{ getNomeUtilizador(alocacao.utilizadorBeneficiarioId) }}</p>
+        <p><span>Entregador:</span> {{ getNomeUtilizador(alocacao.utilizadorEntregadorId) }}</p>
+      </div>
+    </div>
+
+    <!-- Counter para nova alocação (5 anos) -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-hourglass-half"></i> Contador para Nova Alocação</h2>
+      </div>
+      <div class="card-content">
+        <p class="counter-line" title="Contador para nova alocação">
+          <span class="counter-label">Estado:</span>
+          <!-- Badge com truncamento e tooltip do texto completo -->
+          <span
+            class="counter-badge"
+            [ngClass]="counterReady ? 'counter-ready' : 'counter-pending'"
+            [attr.title]="counterText"
+            aria-live="polite"
+          >
+            <i [ngClass]="counterReady ? 'fa-solid fa-check' : 'fa-solid fa-hourglass-half'"></i>
+            <span class="text-compact">{{ counterTextCompact || counterText }}</span>
+          </span>
+        </p>
+        <!-- Barra de progresso do período de 5 anos -->
+        <div class="counter-progress" [ngClass]="counterReady ? 'ready' : 'pending'" aria-hidden="true">
+          <div class="bar" [style.width.%]="progressPercent"></div>
+        </div>
+        <small class="muted">Regras: novas alocações são feitas de 5 em 5 anos.</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Itens da Alocação -->
+  <div *ngIf="itensAlocacao.length > 0; else semItens" class="table-block">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-layer-group"></i> Itens da Alocação</h2>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-barcode"></i> Nº de Série</th>
+            <th><i class="fa-solid fa-industry"></i> Marca</th>
+            <th><i class="fa-solid fa-microchip"></i> Modelo</th>
+            <th><i class="fa-solid fa-shapes"></i> Tipo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of itensAlocacao">
+            <td>{{ getEquipamentoObj(item.equipamentoId)?.numeroSerie || '—' }}</td>
+            <td>{{ getMarcaNomePorModeloId(getEquipamentoObj(item.equipamentoId)?.modeloId) || '—' }}</td>
+            <td>{{ getEquipamentoObj(item.equipamentoId)?.modelo?.nome || '—' }}</td>
+            <td>{{ getEquipamentoObj(item.equipamentoId)?.tipoEquipamento?.nome || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semItens>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Itens da Alocação</h2>
+      </div>
+      <p class="sem-historico">Nenhum item associado a esta alocação.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <div class="actions-group">
+      <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+      <button class="btn-gerar" (click)="abrirModalEquipamento()"><i class="fas fa-plus"></i> Adicionar</button>
+    </div>
+  </div>
+
+  <!-- Modal: Novo Equipamento (igual ao de Equipamentos) -->
+  <div class="modal-overlay" *ngIf="showModalEquipamento">
+    <div class="modal">
+      <h2>Novo Equipamento</h2>
+
+      <form [formGroup]="form" (ngSubmit)="salvarEquipamento()">
+        <div class="form-grid">
+          <div>
+            <label>Modelo:</label>
+            <ng-select [items]="modelos" bindLabel="nome" bindValue="id" formControlName="modelo_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="form.get('modelo_id')?.touched && form.get('modelo_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Tipo:</label>
+            <ng-select [items]="tipos" bindLabel="nome" bindValue="id" formControlName="tipoEquipamento_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="form.get('tipoEquipamento_id')?.touched && form.get('tipoEquipamento_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Aquisição:</label>
+            <ng-select [items]="aquisicoes" bindLabel="descricao" bindValue="id" formControlName="aquisicao_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="form.get('aquisicao_id')?.touched && form.get('aquisicao_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Número de Série:</label>
+            <input type="text" formControlName="numeroSerie" />
+            <small *ngIf="form.get('numeroSerie')?.touched && form.get('numeroSerie')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Data de Registo:</label>
+            <input type="date" formControlName="dataRegisto" />
+            <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModalEquipamento()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

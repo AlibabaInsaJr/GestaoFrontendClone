@@ -1,0 +1,32 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+app-sidebar {
+  width: 240px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  
+}
+
+.main-content {
+  margin-left: 215px;
+  flex-grow: 1;
+  width: calc(100% - 215px);
+  height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+/* === OVERIDE WHEN SIDEBAR IS HIDDEN === */
+body.no-sidebar .main-content {
+  margin-left: 0 !important;
+  width: 100vw !important;
+  padding: 0;
+}

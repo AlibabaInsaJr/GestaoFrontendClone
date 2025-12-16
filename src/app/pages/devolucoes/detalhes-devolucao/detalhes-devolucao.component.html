@@ -1,0 +1,188 @@
+<div class="detalhes-devolucao-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-rotate-left"></i>
+      Detalhes da Devolução
+    </h1>
+  </div>
+
+  <div class="cards-grid" *ngIf="devolucao">
+    <!-- Resumo da Devolução -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-file-circle-check"></i> Resumo da Devolução</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID:</span> {{ devolucao.id }}</p>
+        <p><span>Data da Devolução:</span> {{ devolucao.dataDevolucao | date: 'dd/MM/yyyy' }}</p>
+        <p>
+          <span>Guia:</span>
+          <a *ngIf="devolucao?.pathGuiaDevolucao" [href]="toFileUrl(devolucao.pathGuiaDevolucao)" target="_blank">Abrir Guia</a>
+          <span *ngIf="!devolucao?.pathGuiaDevolucao">Não disponível</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Quem devolveu/recebeu -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-user-group"></i> Pessoas Envolvidas</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Quem Devolveu:</span> {{ getNomeUtilizador(devolucao.utilizadorDevolveuId) }}</p>
+        <p><span>Quem Recebeu:</span> {{ getNomeUtilizador(devolucao.utilizadorRecebeuId) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Itens Devolvidos -->
+  <div *ngIf="itensDevolucao.length > 0; else semItens" class="table-block">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-layer-group"></i> Itens Devolvidos</h2>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-barcode"></i> Nº de Série</th>
+            <th><i class="fa-solid fa-microchip"></i> Modelo</th>
+            <th><i class="fa-solid fa-shapes"></i> Tipo</th>
+            <th><i class="fa-solid fa-signal"></i> Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of itensDevolucao">
+            <td>{{ getEquipamentoObj(item.equipamentoId)?.numeroSerie || '—' }}</td>
+            <td>{{ getEquipamentoObj(item.equipamentoId)?.modelo?.nome || '—' }}</td>
+            <td>{{ getEquipamentoObj(item.equipamentoId)?.tipo?.nome || '—' }}</td>
+            <td>
+              <span class="estado-badge stock-bom" *ngIf="getEquipamentoObj(item.equipamentoId)?.estado === 'STOCK_BOM'">
+                <i class="fa-solid fa-circle-check"></i> STOCK_BOM
+              </span>
+              <span class="estado-badge alocado" *ngIf="getEquipamentoObj(item.equipamentoId)?.estado === 'ALOCADO'">
+                <i class="fa-solid fa-warehouse"></i> ALOCADO
+              </span>
+              <span class="estado-badge" *ngIf="['STOCK_BOM', 'ALOCADO'].indexOf(getEquipamentoObj(item.equipamentoId)?.estado || '') === -1">
+                {{ getEquipamentoObj(item.equipamentoId)?.estado || '—' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semItens>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Itens Devolvidos</h2>
+      </div>
+      <p class="sem-historico">Nenhum item devolvido.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <div class="actions-group">
+      <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+    </div>
+  </div>
+
+  <!-- Template de impressão da Guia de Devolução -->
+  <div class="guia-print" *ngIf="printMode">
+    <!-- Página 1 com background assets/1.1.png -->
+    <section class="guia-page">
+      <div class="content-zone">
+        <!-- Título abaixo do cabeçalho -->
+        <h1 class="titulo">Guia de Devolução</h1>
+
+        <!-- 1. Dados da devolução -->
+        <div class="secao">
+          <div class="secao-titulo">1. Dados da devolução</div>
+          <div class="grid-dados">
+            <div><strong>Quem Devolveu:</strong> {{ getNomeUtilizador(devolucao?.utilizadorDevolveuId) }}</div>
+            <div><strong>Quem Recebeu:</strong> {{ getNomeUtilizador(devolucao?.utilizadorRecebeuId) }}</div>
+            <div><strong>Data da Devolução:</strong> {{ devolucao?.dataDevolucao | date: 'dd/MM/yyyy' }}</div>
+            <div><strong>Nº da Guia:</strong> {{ devolucao?.id || '—' }}</div>
+          </div>
+        </div>
+
+        <!-- Equipamentos para Devolução -->
+        <div class="secao">
+          <div class="secao-titulo">Equipamentos para Devolução</div>
+          <table class="tabela-equipamentos">
+            <thead>
+              <tr>
+                <th>Marca/Modelo</th>
+                <th>Nº de Série</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itensDevolucao">
+                <td>
+                  {{ getEquipamentoObj(item.equipamentoId)?.marca?.nome || '' }}
+                  {{ getEquipamentoObj(item.equipamentoId)?.modelo?.nome ? ('/ ' + getEquipamentoObj(item.equipamentoId)?.modelo?.nome) : '' }}
+                </td>
+                <td>{{ getEquipamentoObj(item.equipamentoId)?.numeroSerie || '—' }}</td>
+                <td>{{ getEquipamentoObj(item.equipamentoId)?.estado || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Área de anotações (linhas) -->
+        <div class="anotacoes">
+          <div class="titulo">Anotações</div>
+          <div class="linha"></div>
+          <div class="linha"></div>
+          <div class="linha"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Página 2+ com background assets/2.1.png -->
+    <section class="guia-page">
+      <div class="content-zone">
+        <!-- 2. Cláusulas -->
+        <div class="secao">
+          <div class="secao-titulo">2. Cláusulas de Devolução e Responsabilidade do Material Informático</div>
+          <p class="paragrafo">O equipamento a ser devolvido é propriedade da instituição e foi utilizado exclusivamente para fins laborais, de acordo com as normas e regulamentos internos. O utilizador obriga-se a:</p>
+          <ul class="lista">
+            <li>Devolver o equipamento em perfeitas condições de funcionamento e conservação;</li>
+            <li>Garantir que todos os acessórios e componentes entregues inicialmente sejam devolvidos;</li>
+            <li>Remover todos os dados pessoais do equipamento antes da devolução, respeitando as políticas de segurança da informação;</li>
+            <li>Comunicar de imediato ao departamento competente qualquer dano, avaria ou perda de componentes;</li>
+            <li>Apresentar o equipamento limpo e em condições adequadas de higiene;</li>
+            <li>Cumprir o prazo estabelecido para a devolução do equipamento.</li>
+          </ul>
+        </div>
+
+        <!-- 3. Declaração e Compromisso -->
+        <div class="secao">
+          <div class="secao-titulo">3. Declaração e Compromisso do Utilizador na Devolução</div>
+          <p class="paragrafo">Declaro, para todos os efeitos, que:</p>
+          <ul class="lista">
+            <li>Devolvo o equipamento conforme recebido, com todos os seus componentes e acessórios;</li>
+            <li>Li e compreendi todas as cláusulas deste guia de devolução;</li>
+            <li>Cumpri integralmente o Regulamento de Gestão, Utilização e Segurança das TICs da instituição durante o período de utilização;</li>
+            <li>Removi todos os meus dados pessoais do equipamento;</li>
+            <li>O equipamento encontra-se em bom estado de conservação e funcionamento, salvo o desgaste natural pelo uso;</li>
+            <li>Estou ciente de que a não devolução ou devolução em más condições pode resultar em processo disciplinar e/ou ressarcimento dos danos causados.</li>
+          </ul>
+        </div>
+
+        <!-- Assinaturas -->
+        <div class="assinaturas">
+          <div class="assinatura bloco">
+            <div class="linha-assinatura"></div>
+            <div class="legenda">Assinatura do Utilizador que devolveu</div>
+          </div>
+          <div class="assinatura bloco">
+            <div class="linha-assinatura"></div>
+            <div class="legenda">Assinatura do Chefe de Departamento</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

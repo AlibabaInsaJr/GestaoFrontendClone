@@ -1,0 +1,59 @@
+<div class="detalhes-utilizador-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-user"></i>
+      Detalhes do Utilizador
+    </h1>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-id-card"></i> Resumo do Utilizador</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Id:</span> {{ utilizador?.id || '---' }}</p>
+        <p><span>Nome:</span> {{ utilizador?.nome || '---' }}</p>
+        <p><span>Email:</span> {{ utilizador?.email || '---' }}</p>
+        <p><span>Telefone:</span> {{ utilizador?.telefone || '---' }}</p>
+        <p><span>Cargo:</span> {{ utilizador?.cargo || '---' }}</p>
+        <p><span>Unidade:</span> {{ getUnidadeNome(utilizador?.unidadeId) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-block" *ngIf="gruposUtilizador && gruposUtilizador.length > 0; else semGrupos">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-layer-group"></i> Grupos do Utilizador</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="table table-grupos">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-hashtag"></i> ID</th>
+            <th><i class="fa-solid fa-users"></i> Nome do Grupo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let grupo of gruposUtilizador">
+            <td>{{ grupo.id }}</td>
+            <td>{{ grupo.nome }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semGrupos>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Grupos do Utilizador</h2>
+      </div>
+      <p class="mensagem-vazia">Este utilizador não possui grupos associados.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+  </div>
+</div>

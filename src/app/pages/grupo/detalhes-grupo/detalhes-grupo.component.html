@@ -1,0 +1,54 @@
+<div class="detalhes-grupo-page">
+  <!-- Cabeçalho -->
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-users"></i>
+      Detalhes do Grupo
+    </h1>
+  </div>
+
+  <!-- Cartão de resumo -->
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-id-card"></i> Resumo do Grupo</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID:</span> {{ grupo?.id || '---' }}</p>
+        <p><span>Nome:</span> {{ grupo?.nome || '---' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bloco de tabela de utilizadores -->
+  <div class="table-block">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-people-group"></i> Utilizadores do Grupo</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="table table-utilizadores">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-hashtag"></i> ID</th>
+            <th><i class="fa-solid fa-user"></i> Nome do Utilizador</th>
+            <th><i class="fa-solid fa-briefcase"></i> Cargo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let utilizador of utilizadoresGrupo">
+            <td>{{ utilizador.id }}</td>
+            <td>{{ utilizador.nome }}</td>
+            <td>{{ utilizador.cargo }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()">
+      <i class="fa-solid fa-arrow-left"></i>
+      Voltar
+    </button>
+  </div>
+</div>

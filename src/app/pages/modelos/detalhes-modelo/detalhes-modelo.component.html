@@ -1,0 +1,58 @@
+<div class="detalhes-modelo-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-cube"></i>
+      Detalhes do Modelo
+    </h1>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Resumo do Modelo</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Id:</span> {{ modelo?.id || '---' }}</p>
+        <p><span>Nome:</span> {{ modelo?.nome || '---' }}</p>
+        <p><span>Data de Registo:</span> {{ modelo?.dataRegisto | date: 'dd/MM/yyyy' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-block" *ngIf="equipamentos.length > 0; else semEquipamentos">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-screwdriver-wrench"></i> Equipamentos Associados</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="table table-equipamentos">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-hashtag"></i> ID</th>
+            <th><i class="fa-solid fa-barcode"></i> Nº Série</th>
+            <th><i class="fa-solid fa-calendar-days"></i> Data Registo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let eq of equipamentos">
+            <td>{{ eq.id }}</td>
+            <td>{{ eq.numeroSerie }}</td>
+            <td>{{ eq.dataRegisto | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semEquipamentos>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-screwdriver-wrench"></i> Equipamentos Associados</h2>
+      </div>
+      <p class="mensagem-vazia">Nenhum equipamento associado a este modelo.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+  </div>
+</div>

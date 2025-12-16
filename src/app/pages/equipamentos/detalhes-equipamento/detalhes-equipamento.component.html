@@ -1,0 +1,101 @@
+<div class="detalhes-tipo-equipamento-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-microchip"></i>
+      Detalhes do Equipamento
+    </h1>
+  </div>
+
+  <div class="cards-grid">
+    <!-- Resumo do Equipamento -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Resumo do Equipamento</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Número de Série:</span> {{ equipamento?.numeroSerie || '---' }}</p>
+        <p>
+          <span>Estado:</span>
+          <span class="estado-badge"
+                [ngClass]="{
+                  'stock-novo': (equipamento?.estado) === 'STOCK_NOVO' || (equipamento?.estado) === 'STOCK NOVO',
+                  'alocado': (equipamento?.estado) === 'ALOCADO',
+                  'stock-bom': (equipamento?.estado) === 'STOCK_BOM' || (equipamento?.estado) === 'STOCK BOM' || (equipamento?.estado) === 'DISPONIVEL'
+                }">
+            <i *ngIf="(equipamento?.estado) === 'STOCK_NOVO' || (equipamento?.estado) === 'STOCK NOVO'" class="fa-solid fa-box"></i>
+            <i *ngIf="(equipamento?.estado) === 'ALOCADO'" class="fa-solid fa-warehouse"></i>
+            <i *ngIf="(equipamento?.estado) === 'STOCK_BOM' || (equipamento?.estado) === 'STOCK BOM' || (equipamento?.estado) === 'DISPONIVEL'" class="fa-solid fa-circle-check"></i>
+            {{ equipamento?.estado || '---' }}
+          </span>
+        </p>
+        <p><span>Modelo:</span> {{ getModeloNome(equipamento?.modeloId) }}</p>
+        <p><span>Aquisição:</span> {{ getAquisicaoNrConcurso(equipamento?.aquisicaoId) }}</p>
+        <p><span>Data de Registo:</span> {{ equipamento?.dataRegisto | date: 'dd/MM/yyyy' }}</p>
+      </div>
+    </div>
+
+    <!-- Tipo de Equipamento -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-sitemap"></i> Tipo de Equipamento</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID do Tipo:</span> {{ equipamento?.tipoEquipamentoId }}</p>
+        <p><span>Nome do Tipo:</span> {{ getTipoNome(equipamento?.tipoEquipamentoId) }}</p>
+        <p><span>Descrição do Tipo:</span> {{ getTipoDescricao(equipamento?.tipoEquipamentoId) }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Histórico do Equipamento em tabela -->
+  <div class="table-block" *ngIf="equipamentoHistorico && equipamentoHistorico.length > 0; else semHistorico">
+    <div class="block-header">
+      <h2><i class="fa-solid fa-clock-rotate-left"></i> Histórico do Equipamento</h2>
+    </div>
+    <div class="table-wrapper">
+      <table class="table table-history">
+        <thead>
+          <tr>
+            <th><i class="fa-solid fa-gear"></i> Ação</th>
+            <th><i class="fa-solid fa-user"></i> Utilizador</th>
+            <th><i class="fa-solid fa-calendar-days"></i> Data</th>
+            <th><i class="fa-solid fa-circle-nodes"></i> Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of equipamentoHistorico">
+            <td>{{ item.acao || item.tipoAcao || '---' }}</td>
+            <td>{{ item.utilizador?.nome || item.utilizador || '---' }}</td>
+            <td>{{ (item.data || item.dataRegisto || item.dataAlocacao || item.dataDevolucao || item.dataEnvioReparacao) | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              <span class="estado-badge"
+                    [ngClass]="{
+                      'stock-novo': (item.estado || item.status) === 'STOCK_NOVO' || (item.estado || item.status) === 'STOCK NOVO',
+                      'alocado': (item.estado || item.status) === 'ALOCADO',
+                      'stock-bom': (item.estado || item.status) === 'STOCK_BOM' || (item.estado || item.status) === 'STOCK BOM' || (item.estado || item.status) === 'DISPONIVEL'
+                    }">
+                <i *ngIf="(item.estado || item.status) === 'STOCK_NOVO' || (item.estado || item.status) === 'STOCK NOVO'" class="fa-solid fa-box"></i>
+                <i *ngIf="(item.estado || item.status) === 'ALOCADO'" class="fa-solid fa-warehouse"></i>
+                <i *ngIf="(item.estado || item.status) === 'STOCK_BOM' || (item.estado || item.status) === 'STOCK BOM' || (item.estado || item.status) === 'DISPONIVEL'" class="fa-solid fa-circle-check"></i>
+                {{ item.estado || item.status || '---' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #semHistorico>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-clock-rotate-left"></i> Histórico do Equipamento</h2>
+      </div>
+      <p class="sem-historico">Sem eventos registados para este equipamento.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+  </div>
+</div>

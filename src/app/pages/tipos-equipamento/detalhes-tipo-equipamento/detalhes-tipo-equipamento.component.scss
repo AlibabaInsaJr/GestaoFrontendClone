@@ -1,0 +1,254 @@
+.detalhes-tipo-equipamento-page {
+  background-color: #f8fafc;
+  padding: 2rem;
+  margin: auto;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', sans-serif;
+
+  h1, h2 {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+    color: #1e293b;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    font-size: 1rem;
+    color: #1f2937;
+
+    .estado {
+      grid-column: span 2;
+    }
+
+    span.estado-badge {
+      display: inline-block;
+      padding: 0.3rem 0.7rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .stock_bom {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .stock_novo {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .baixado {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+  }
+
+  .tabela-wrapper {
+    margin-top: 1rem;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    th, td {
+      text-align: center;
+      padding: 0.75rem 1rem;
+      color: #475569;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: #334155;
+    }
+  }
+
+  .detalhes-actions {
+    margin-top: 2rem;
+    text-align: right;
+
+    button {
+      background-color: #2563eb;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #1d4ed8;
+      }
+    }
+  }
+
+  .info-card {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+    gap: 1rem;
+  }
+  
+  .info-bloco {
+    flex: 1 1 300px;
+  
+    p {
+      font-size: 1rem;
+      margin-bottom: 0.8rem;
+  
+      span:first-child {
+        font-weight: 600;
+        color: #1e293b;
+        margin-right: 0.5rem;
+        display: inline-block;
+        min-width: 110px;
+      }
+    }
+  }
+  
+  .estado-badge {
+    display: inline-block;
+    padding: 0.3rem 0.7rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  
+    &.stock_bom {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+  
+    &.stock_novo {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+    }
+  
+    &.baixado {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+  }
+  
+  /* Estilos extras para igualar o layout do componente Detalhes de Equipamento */
+  .page-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .page-header h1 i { color: #4f46e5; }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .card .card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #edf2f7;
+  }
+  .card .card-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .card .card-header h2 i { color: #4f46e5; }
+
+  .card .card-content { padding: 1rem 1.25rem; }
+  .card .card-content p { font-size: 0.98rem; margin: 0.35rem 0; color: #334155; }
+  .card .card-content p span:first-child {
+    font-weight: 600;
+    color: #0f172a;
+    margin-right: 0.5rem;
+    display: inline-block;
+    min-width: 130px;
+  }
+
+  .table-block {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+  }
+  .table-block .block-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #edf2f7;
+  }
+  .table-block .block-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .table-block .block-header h2 i { color: #4f46e5; }
+
+  .table-block .table-wrapper { max-height: 480px; overflow: auto; }
+  .table-block table { width: 100%; border-collapse: collapse; }
+  .table-block thead th {
+    position: sticky;
+    top: 0;
+    background: #eef2ff;
+    text-align: left;
+    padding: 0.8rem 1rem;
+    font-weight: 700;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .table-block tbody td { padding: 0.75rem 1rem; border-top: 1px solid #edf2f7; color: #334155; }
+
+  /* Zebra striping para melhor contraste nas linhas (tons acinzentados) */
+  .table-block tbody tr:nth-child(odd) { background-color: #ffffff; }
+  .table-block tbody tr:nth-child(even) { background-color: #f8fafc; }
+  .table-block tbody tr:hover { background-color: #f1f5f9; }
+
+  .detalhes-actions { margin-top: 1rem; text-align: right; }
+  .detalhes-actions .btn-voltar {
+    background-color: #4f46e5;
+    color: #ffffff;
+    padding: 0.65rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .detalhes-actions .btn-voltar:hover { background-color: #4338ca; }
+
+  @media (max-width: 640px) {
+    .cards-grid { grid-template-columns: 1fr; }
+    .table-block .table-wrapper { max-height: 360px; }
+  }
+}

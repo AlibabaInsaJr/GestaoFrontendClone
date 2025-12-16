@@ -1,0 +1,63 @@
+<h1>Grupos</h1>
+<div class="equipamentos-page">
+  <!-- Filtros -->
+  <div class="filtros">
+    <!-- Filtro por nome com ng-select (igual ao componente de Empresas) -->
+    <ng-select
+      [items]="grupos"
+      bindLabel="nome"
+      bindValue="id"
+      [(ngModel)]="filtroGrupoId"
+      placeholder="Pesquisar por nome..."
+      [clearable]="true">
+    </ng-select>
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Novo grupo
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th class="centered">Nome</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let grupo of getGruposFiltrados()">
+          <td>{{ grupo.id }}</td>
+          <td class="centered">{{ grupo.nome }}</td>
+          <td class="acoes">
+            <button class="btn-edit" (click)="abrirModal(false, grupo)"><i class="fas fa-edit"></i></button>
+            <button class="btn-delete" (click)="excluir(grupo.id)"><i class="fas fa-trash-alt"></i></button>
+            <button class="btn-view" [routerLink]="['/grupos', grupo.id]"><i class="fas fa-eye"></i></button>
+          </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal">
+      <h2>{{ editando ? 'Editar' : 'Novo ' }} Grupo</h2>
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Nome</label>
+            <input type="text" formControlName="nome" class="input-center" />
+            <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

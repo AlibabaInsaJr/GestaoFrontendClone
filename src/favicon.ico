@@ -1,0 +1,36 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#2E5BBA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A8A;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="highlight" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#4A90E2;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Main letter A shape -->
+  <path d="M20 80 L35 30 Q40 20 45 20 Q50 20 55 30 L70 80 Q72 85 68 85 L62 85 Q58 85 56 80 L54 70 L36 70 L34 80 Q32 85 28 85 L22 85 Q18 85 20 80 Z" 
+        fill="url(#blueGradient)" 
+        stroke="#1E3A8A" 
+        stroke-width="1"/>
+  
+  <!-- Inner triangle cutout -->
+  <path d="M38 65 L52 65 L45 45 Z" 
+        fill="white" 
+        opacity="0.9"/>
+  
+  <!-- Highlight effect -->
+  <ellipse cx="45" cy="45" rx="25" ry="30" 
+           fill="url(#highlight)"/>
+  
+  <!-- 3D shadow effect -->
+  <path d="M21 81 L36 31 Q41 21 46 21 Q51 21 56 31 L71 81" 
+        fill="none" 
+        stroke="#0F1419" 
+        stroke-width="2" 
+        opacity="0.3" 
+        transform="translate(2,2)"/>
+</svg>

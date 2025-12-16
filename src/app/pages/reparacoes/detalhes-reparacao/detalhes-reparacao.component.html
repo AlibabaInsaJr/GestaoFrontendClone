@@ -1,0 +1,115 @@
+<div class="detalhes-reparacao-page">
+  <div class="page-header">
+    <h1>
+      <i class="fa-solid fa-screwdriver-wrench"></i>
+      Detalhes da Reparação
+    </h1>
+  </div>
+
+  <div class="cards-grid" *ngIf="reparacao">
+    <!-- Resumo da Reparação -->
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-file-circle-check"></i> Resumo da Reparação</h2>
+      </div>
+      <div class="card-content">
+        <p><span>ID:</span> {{ reparacao.id }}</p>
+        <p><span>Avaria:</span> {{ reparacao.avaria || '---' }}</p>
+        <p><span>Data Envio:</span> {{ reparacao.dataEnvioReparacao | date: 'dd/MM/yyyy' }}</p>
+        <p><span>Data Prevista Devolução:</span> {{ reparacao.dataPrevistaDevolucao | date: 'dd/MM/yyyy' }}</p>
+        <p><span>Data Devolução:</span> {{ reparacao.dataDevolucao | date: 'dd/MM/yyyy' }}</p>
+      </div>
+    </div>
+
+    <!-- Empresa e Técnico -->
+    <div class="card card-empresa-tecnico">
+      <div class="card-header">
+        <h2><i class="fa-solid fa-building"></i> Empresa e Técnico</h2>
+      </div>
+      <div class="card-content">
+        <p><span>Empresa:</span> {{ getEmpresaNome(reparacao.empresaId) }}</p>
+        <p><span>Técnico GSI:</span> {{ getTecnicoNome(reparacao.tecnicoGSIId) || reparacao.tecnicoGSIId }}</p>
+        <!-- Cronómetro de devolução prevista -->
+        <div class="cronometro" [ngClass]="{ 'antes-prazo': !countdownPassed, 'apos-prazo': countdownPassed }" *ngIf="countdownText">
+          <span class="cronometro-icone" aria-hidden="true">⏱️</span>
+          <span class="cronometro-texto">{{ countdownText }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Itens da Reparação e Histórico -->
+  <div *ngIf="itensReparacao.length > 0; else semItens">
+    <div *ngFor="let item of itensReparacao" class="table-block">
+      <div class="block-header">
+        <h2>
+          <i class="fa-solid fa-layer-group"></i>
+          Equipamento: {{ getDescricaoEquipamento(item.equipamentoId) }}
+        </h2>
+        <div class="equipamento-status">
+          <span class="estado-badge"
+                [ngClass]="{
+                  'alocado': !isEquipamentoDevolvido(item.equipamentoId),
+                  'stock-bom': isEquipamentoDevolvido(item.equipamentoId)
+                }">
+            <i *ngIf="!isEquipamentoDevolvido(item.equipamentoId)" class="fa-solid fa-warehouse"></i>
+            <i *ngIf="isEquipamentoDevolvido(item.equipamentoId)" class="fa-solid fa-circle-check"></i>
+            {{ getStatusEquipamento(item.equipamentoId) }}
+          </span>
+          <button 
+            *ngIf="!isEquipamentoDevolvido(item.equipamentoId)" 
+            class="btn-devolvido" 
+            (click)="marcarComoDevolvido(item.equipamentoId)"
+            title="Marcar como devolvido">
+            <i class="fas fa-check"></i> Devolvido
+          </button>
+        </div>
+      </div>
+
+      <!-- Removido histórico detalhado por equipamento -->
+      <!-- A informação de histórico já está resumida na secção 'Resumo da Reparação' -->
+    </div>
+  </div>
+
+  <ng-template #semItens>
+    <div class="table-block">
+      <div class="block-header">
+        <h2><i class="fa-solid fa-layer-group"></i> Itens da Reparação</h2>
+      </div>
+      <p class="sem-historico">Nenhum item associado a esta reparação.</p>
+    </div>
+  </ng-template>
+
+  <div class="detalhes-actions">
+    <button class="btn-voltar" (click)="voltar()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+  </div>
+</div>
+
+<style>
+  .cronometro {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .cronometro.antes-prazo {
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #c8e6c9;
+  }
+  .cronometro.apos-prazo {
+    background: #ffebee;
+    color: #b71c1c;
+    border: 1px solid #ffcdd2;
+  }
+  .cronometro-icone {
+    font-size: 18px;
+  }
+  .cronometro-texto {
+    line-height: 1.4;
+  }
+</style>
