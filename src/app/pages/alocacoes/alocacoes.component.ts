@@ -40,6 +40,13 @@ import { environment } from '../../../environments/environment';
 })
 export class AlocacoesComponent implements OnInit {
   alocacoes: any[] = [];
+  page = 0;
+  size = 20;
+  total = 0;
+  hasMore = true;
+  loading = false;
+  useFallback = false;
+  bufferTodos: any[] = [];
   equipamentos: any[] = [];
   equipamentosDisponiveis: any[] = [];
   modelos: any[] = [];
@@ -172,6 +179,21 @@ export class AlocacoesComponent implements OnInit {
         }
       }
     });
+  }
+
+  carregarAlocacoesPaginado(reset = false): void {
+    this.carregarAlocacoes();
+  }
+
+  private appendFromBuffer(reset = false): void {
+    const start = reset ? 0 : this.alocacoes.length;
+    const next = this.bufferTodos.slice(start, start + this.size);
+    this.alocacoes = this.alocacoes.concat(next);
+    this.total = this.bufferTodos.length;
+    this.hasMore = this.alocacoes.length < this.total;
+    if (this.hasMore) {
+      this.page += 1;
+    }
   }
 
   carregarEquipamentos(): void {
@@ -317,6 +339,8 @@ export class AlocacoesComponent implements OnInit {
         periodoAlocacao: periodoString,
         pathGuiaRecepcao: alocacao.pathGuiaRecepcao
       });
+      // Exibir o período selecionado no input de busca
+      this.periodoBusca = periodoString;
 
       // Definir o utilizador beneficiário selecionado
       const utilizador = this.utilizadores.find(u => u.id === alocacao.utilizadorBeneficiarioId);
@@ -334,10 +358,38 @@ export class AlocacoesComponent implements OnInit {
 
       this.itemsAlocacaoService.listarPorAlocacao(alocacao.id).subscribe({
         next: (itens: any) => {
-          this.selectedEquipamentos = itens.map((item: any) => {
-            const eq = this.equipamentos.find(e => e.id === item.equipamentoId);
-            return eq ? eq.numeroSerie : '';
-          }).filter((ns: any) => ns !== '');
+          this.selectedEquipamentos = [];
+          (itens || []).forEach((item: any) => {
+            const eqLocal = this.equipamentos.find(e => e.id === item.equipamentoId);
+            if (eqLocal) {
+              if (!this.selectedEquipamentos.includes(eqLocal.numeroSerie)) {
+                this.selectedEquipamentos.push(eqLocal.numeroSerie);
+              }
+              this.equipamentosMap.set(eqLocal.id, eqLocal);
+            } else {
+              const equipamentoId = item?.equipamentoId || item?.equipamento?.id;
+              if (equipamentoId) {
+                this.equipamentoService.buscarPorId(equipamentoId).subscribe({
+                  next: (eq: any) => {
+                    if (eq?.numeroSerie && !this.selectedEquipamentos.includes(eq.numeroSerie)) {
+                      this.selectedEquipamentos.push(eq.numeroSerie);
+                    }
+                    if (eq?.id) {
+                      this.equipamentosMap.set(eq.id, eq);
+                    }
+                  },
+                  error: (erro: any) => {
+                    console.error('Erro ao buscar equipamento da alocação (edição):', erro);
+                    const errorMessage = this.errorHandler.handleHttpError(erro);
+                    this.errorHandler.showError(errorMessage);
+                  }
+                });
+              }
+            }
+          });
+          // resetar busca e sugestões para refletir estado atual
+          this.equipamentoBusca = '';
+          this.equipamentosFiltradosSugestao = [];
         },
         error: (err: any) => {
           console.error('Erro ao carregar itens da alocação:', err);
@@ -416,17 +468,50 @@ export class AlocacoesComponent implements OnInit {
   }
 
   getEquipamentosFiltrados() {
-    if (!this.equipamentoBusca || this.equipamentoBusca.trim() === '') {
-      return this.equipamentosDisponiveis;
+    // construir base com disponíveis
+    const mapa = new Map<string, any>();
+    (this.equipamentosDisponiveis || []).forEach(eq => {
+      if (eq?.numeroSerie) mapa.set(eq.numeroSerie, eq);
+    });
+    // acrescentar selecionados vindos da edição (podem estar ALOCADOS)
+    const cacheValues = Array.from(this.equipamentosMap.values());
+    for (const ns of this.selectedEquipamentos) {
+      // tentar encontrar nos disponíveis
+      let eq = (this.equipamentosDisponiveis || []).find(e => e.numeroSerie === ns);
+      // se não houver, tentar nos equipamentos gerais
+      if (!eq) {
+        eq = (this.equipamentos || []).find(e => e.numeroSerie === ns);
+      }
+      // se ainda não houver, tentar no cache carregado por buscarPorId
+      if (!eq) {
+        eq = cacheValues.find(e => e?.numeroSerie === ns);
+      }
+      // como última alternativa, montar objeto mínimo só para exibir na lista
+      if (!eq) {
+        eq = { numeroSerie: ns };
+      }
+      mapa.set(ns, eq);
     }
-    
+    const base = Array.from(mapa.values());
+
+    if (!this.equipamentoBusca || this.equipamentoBusca.trim() === '') {
+      return base;
+    }
     const busca = this.equipamentoBusca.toLowerCase().trim();
-    return this.equipamentosDisponiveis.filter(eq => {
-      const numeroSerieMatch = eq.numeroSerie.toLowerCase().includes(busca);
-      const modelo = this.modelos.find(m => m.id === eq.modeloId);
-      const modeloMatch = modelo && modelo.nome.toLowerCase().includes(busca);
+    return base.filter(eq => {
+      const numeroSerieMatch = (eq?.numeroSerie || '').toLowerCase().includes(busca);
+      const modelo = this.modelos.find(m => m.id === eq?.modeloId);
+      const modeloMatch = modelo && (modelo?.nome || '').toLowerCase().includes(busca);
       return numeroSerieMatch || modeloMatch;
     });
+  }
+
+  private getEquipamentoIdPorNumeroSerie(ns: string): number | null {
+    const eqLocal = (this.equipamentos || []).find(e => e.numeroSerie === ns);
+    if (eqLocal?.id) return eqLocal.id;
+    const cacheValues = Array.from(this.equipamentosMap.values());
+    const eqCache = cacheValues.find(e => e?.numeroSerie === ns);
+    return eqCache?.id || null;
   }
 
   filtrarUtilizadores() {
@@ -661,28 +746,87 @@ export class AlocacoesComponent implements OnInit {
   }
 
   private atualizarItensAlocacao(alocacaoId: number, dataAlocacao: string) {
-    const itens = this.selectedEquipamentos.map(ns => {
-      const eq = this.equipamentos.find(e => e.numeroSerie === ns);
-      return {
-        alocacaoId: alocacaoId,
-        equipamentoId: eq ? eq.id : null,
-        dataAlocacao: dataAlocacao
-      };
-    }).filter(item => item.equipamentoId !== null);
+    // 1. Buscar itens existentes desta alocação
+    this.itemsAlocacaoService.listarPorAlocacao(alocacaoId).subscribe({
+      next: (itensExistentes) => {
+        // Função auxiliar para criar os novos itens
+        const criarNovosItens = () => {
+          const itensParaCriar = this.selectedEquipamentos.map(ns => {
+            const equipamentoId = this.getEquipamentoIdPorNumeroSerie(ns);
+            return {
+              alocacaoId,
+              equipamentoId,
+              dataAlocacao
+            };
+          }).filter(item => item.equipamentoId !== null);
 
-    for (const item of itens) {
-      this.itemsAlocacaoService.criar(item).subscribe({
-        error: (err: any) => {
-          console.error('Erro ao criar item de alocação:', err);
-          if (err.status === 401 || err.status === 403) {
-            this.notificationService.showError('Sua sessão expirou. Por favor, faça login novamente.');
-          } else {
-            const errorMessage = this.errorHandler.handleHttpError(err);
-            this.errorHandler.showError(errorMessage);
+          if (itensParaCriar.length === 0) {
+            // Se não houver itens para criar, apenas atualiza a lista de equipamentos
+            this.carregarEquipamentos();
+            return;
           }
+
+          let criadosCount = 0;
+          itensParaCriar.forEach(item => {
+            this.itemsAlocacaoService.criar(item).subscribe({
+              next: () => {
+                criadosCount++;
+                if (criadosCount === itensParaCriar.length) {
+                  // Ao finalizar todas as criações, recarrega a lista de equipamentos
+                  // para garantir que os recém-alocados saiam da lista de disponíveis
+                  this.carregarEquipamentos();
+                }
+              },
+              error: (err: any) => {
+                console.error('Erro ao criar item de alocação:', err);
+                criadosCount++;
+                if (criadosCount === itensParaCriar.length) {
+                   this.carregarEquipamentos();
+                }
+              }
+            });
+          });
+        };
+
+        // 2. Se houver itens existentes, removê-los primeiro
+        if (itensExistentes && itensExistentes.length > 0) {
+          let removidosCount = 0;
+          itensExistentes.forEach((item: any) => {
+            this.itemsAlocacaoService.remover(item.id).subscribe({
+              next: () => {
+                removidosCount++;
+                if (removidosCount === itensExistentes.length) {
+                  criarNovosItens();
+                }
+              },
+              error: (err: any) => {
+                console.error('Erro ao remover item antigo:', err);
+                removidosCount++;
+                // Continua mesmo com erro para tentar salvar o estado correto
+                if (removidosCount === itensExistentes.length) {
+                  criarNovosItens();
+                }
+              }
+            });
+          });
+        } else {
+          // Se não houver itens antigos, apenas cria os novos
+          criarNovosItens();
         }
-      });
-    }
+      },
+      error: (err: any) => {
+        console.error('Erro ao listar itens da alocação para atualização:', err);
+        // Fallback: tenta criar os novos itens mesmo se falhar a listagem
+        const itens = this.selectedEquipamentos.map(ns => {
+            const equipamentoId = this.getEquipamentoIdPorNumeroSerie(ns);
+            return { alocacaoId, equipamentoId, dataAlocacao };
+        }).filter(item => item.equipamentoId !== null);
+        
+        itens.forEach(item => this.itemsAlocacaoService.criar(item).subscribe());
+        // Tenta atualizar a lista de equipamentos após um delay
+        setTimeout(() => this.carregarEquipamentos(), 1000);
+      }
+    });
   }
 
   onFileError(error: string): void {
@@ -775,7 +919,15 @@ export class AlocacoesComponent implements OnInit {
 
       // Tabela de equipamentos (Marca, Modelo, Nº de Série)
       const rows = this.selectedEquipamentos.map(ns => {
-        const eq = this.equipamentos.find(e => e.numeroSerie === ns);
+        let eq = this.equipamentos.find(e => e.numeroSerie === ns);
+        
+        // Se não encontrar na lista principal (que só tem disponíveis/stock), 
+        // procurar no cache de edição (que tem os alocados desta alocação)
+        if (!eq) {
+            const cacheValues = Array.from(this.equipamentosMap.values());
+            eq = cacheValues.find(e => e.numeroSerie === ns);
+        }
+
         const modelo = eq ? this.getModeloNome(eq.modeloId) : '';
         const marca = eq ? this.getMarcaNomePorModeloId(eq.modeloId) : '';
         return [marca || '—', modelo || '—', ns];
@@ -860,17 +1012,11 @@ export class AlocacoesComponent implements OnInit {
       const fileName = `Guia_de_Recepcao_${safeName}.pdf`;
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-      // Disparar download imediato para o utilizador
       try {
-        doc.save(fileName);
-      } catch (e) {
-        // Fallback caso o doc.save falhe
         const url = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
+        window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (e) {
       }
 
       // Tornar o botão "Salvar" visível imediatamente após gerar a guia
@@ -887,12 +1033,12 @@ export class AlocacoesComponent implements OnInit {
           if (res && res.success && res.filePath) {
             // Guardar apenas o caminho no servidor
             this.form.patchValue({ pathGuiaRecepcao: res.filePath });
-            this.notificationService.showSuccess('Guia de recepção gerada, descarregada e carregada automaticamente.');
+            this.notificationService.showSuccess('Guia de recepção gerada e carregada automaticamente.');
             this.isUploadingGuia = false;
           } else {
             // Caso a API não devolva o caminho, manter o File local para anexar manualmente
             this.form.patchValue({ pathGuiaRecepcao: file });
-            this.notificationService.showWarning('Guia foi descarregada, mas o upload automático falhou. Pode anexar manualmente.');
+            this.notificationService.showWarning('Guia foi gerada, mas o upload automático falhou. Pode anexar manualmente.');
           }
           this.guiaGerada = true; // mesmo com erro de upload, permitir que o usuário salve
         },

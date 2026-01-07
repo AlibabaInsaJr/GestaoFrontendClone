@@ -7,6 +7,7 @@ import { tap, catchError, retry } from 'rxjs/operators';
 import { AuditService } from './audit.service';
 import { ErrorHandlerService } from './error-handler.service';
 import { AuthService } from './auth.service';
+import { PageResponse } from './equipamento.service';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +32,15 @@ export class AlocacaoService {
   // Lista apenas alocações com itens ativos (não devolvidos)
   listarAtivas(): Observable<any[]> {
     return this.http.get<any[]>(`${this.API}/ativas`).pipe(
+      retry(1),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  listarAtivasPaginado(page: number, size: number, sort?: string): Observable<PageResponse<any>> {
+    const params: any = { page, size };
+    if (sort) params.sort = sort;
+    return this.http.get<PageResponse<any>>(`${this.API}/ativas/paginado`, { params }).pipe(
       retry(1),
       catchError(this.handleError.bind(this))
     );

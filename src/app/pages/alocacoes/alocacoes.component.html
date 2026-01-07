@@ -85,6 +85,9 @@
       </tbody>
     </table>
   </div>
+  <div class="empty-state" *ngIf="alocacoes.length === 0">
+    Nenhuma alocação encontrada.
+  </div>
 
   <!-- Modal -->
   <div class="modal-overlay" *ngIf="showModal">

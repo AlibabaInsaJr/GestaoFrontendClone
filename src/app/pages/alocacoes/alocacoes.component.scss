@@ -80,6 +80,43 @@
     overflow-y: auto;
     position: relative;
   }
+  .paginacao-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+  .paginacao-actions button {
+    padding: 0.6rem 1.2rem;
+    background-color: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .paginacao-actions button:hover {
+    background-color: #059669;
+  }
+  .paginacao-actions button:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+  }
+  .empty-state {
+    margin-top: 1rem;
+    padding: 1rem;
+    text-align: center;
+    color: #475569;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+  }
 
   table {
     width: 100%;

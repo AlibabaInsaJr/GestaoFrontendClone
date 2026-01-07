@@ -773,15 +773,13 @@ export class DevolucoesComponent implements OnInit {
       const fileName = `Guia_de_Devolucao_${safeName}.pdf`;
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
+      // Abrir em nova aba para visualização em vez de descarregar
       try {
-        doc.save(fileName);
-      } catch (e) {
         const url = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
+        window.open(url, '_blank');
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (e) {
+        console.error('Erro ao abrir PDF em nova aba:', e);
       }
 
       // Preencher o campo com o File para anexar manualmente se desejar
@@ -793,7 +791,7 @@ export class DevolucoesComponent implements OnInit {
         next: (res: FileUploadResponse | any) => {
           if (res && res.success && res.filePath) {
             this.form.patchValue({ pathGuiaDevolucao: res.filePath });
-            alert('Guia de devolução gerada, descarregada e carregada automaticamente.');
+            // alert('Guia de devolução gerada e carregada automaticamente.');
             this.isUploadingGuia = false;
           } else {
             this.form.patchValue({ pathGuiaDevolucao: file });
@@ -816,7 +814,7 @@ export class DevolucoesComponent implements OnInit {
         }
       });
 
-      alert('Guia de devolução gerada com sucesso.');
+      alert('Guia de devolução gerada com sucesso. A guia foi aberta numa nova aba.');
     } catch (err) {
       console.error('Erro ao gerar Guia de Devolução:', err);
       alert('Falha ao gerar a Guia em PDF.');
