@@ -45,6 +45,7 @@
         <thead>
           <tr>
             <th><i class="fa-solid fa-barcode"></i> Nº de Série</th>
+            <th><i class="fa-solid fa-industry"></i> Marca</th>
             <th><i class="fa-solid fa-microchip"></i> Modelo</th>
             <th><i class="fa-solid fa-shapes"></i> Tipo</th>
             <th><i class="fa-solid fa-signal"></i> Estado</th>
@@ -53,18 +54,22 @@
         <tbody>
           <tr *ngFor="let item of itensDevolucao">
             <td>{{ getEquipamentoObj(item.equipamentoId)?.numeroSerie || '—' }}</td>
+            <td>{{ getMarcaNomePorModeloId(getEquipamentoObj(item.equipamentoId)?.modeloId) || '—' }}</td>
             <td>{{ getEquipamentoObj(item.equipamentoId)?.modelo?.nome || '—' }}</td>
-            <td>{{ getEquipamentoObj(item.equipamentoId)?.tipo?.nome || '—' }}</td>
+            <td>{{ getEquipamentoObj(item.equipamentoId)?.tipoEquipamento?.nome || '—' }}</td>
             <td>
-              <span class="estado-badge stock-bom" *ngIf="getEquipamentoObj(item.equipamentoId)?.estado === 'STOCK_BOM'">
-                <i class="fa-solid fa-circle-check"></i> STOCK_BOM
-              </span>
-              <span class="estado-badge alocado" *ngIf="getEquipamentoObj(item.equipamentoId)?.estado === 'ALOCADO'">
-                <i class="fa-solid fa-warehouse"></i> ALOCADO
-              </span>
-              <span class="estado-badge" *ngIf="['STOCK_BOM', 'ALOCADO'].indexOf(getEquipamentoObj(item.equipamentoId)?.estado || '') === -1">
-                {{ getEquipamentoObj(item.equipamentoId)?.estado || '—' }}
-              </span>
+              <ng-container *ngIf="item.novoEstado || getEquipamentoObj(item.equipamentoId)?.estado as estado">
+                <span class="estado-badge stock-bom" *ngIf="estado === 'STOCK_BOM'">
+                  <i class="fa-solid fa-circle-check"></i> STOCK_BOM
+                </span>
+                <span class="estado-badge alocado" *ngIf="estado === 'ALOCADO'">
+                  <i class="fa-solid fa-warehouse"></i> ALOCADO
+                </span>
+                <span class="estado-badge" *ngIf="['STOCK_BOM', 'ALOCADO'].indexOf(estado) === -1">
+                  {{ estado }}
+                </span>
+              </ng-container>
+              <span *ngIf="!(item.novoEstado || getEquipamentoObj(item.equipamentoId)?.estado)">—</span>
             </td>
           </tr>
         </tbody>
@@ -120,7 +125,7 @@
             <tbody>
               <tr *ngFor="let item of itensDevolucao">
                 <td>
-                  {{ getEquipamentoObj(item.equipamentoId)?.marca?.nome || '' }}
+                  {{ getMarcaNomePorModeloId(getEquipamentoObj(item.equipamentoId)?.modeloId) || '' }}
                   {{ getEquipamentoObj(item.equipamentoId)?.modelo?.nome ? ('/ ' + getEquipamentoObj(item.equipamentoId)?.modelo?.nome) : '' }}
                 </td>
                 <td>{{ getEquipamentoObj(item.equipamentoId)?.numeroSerie || '—' }}</td>

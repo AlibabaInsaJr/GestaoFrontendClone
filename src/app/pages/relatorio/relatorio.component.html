@@ -39,9 +39,21 @@
       <button class="novo-btn" (click)="generateReport()">
         <i class="fas fa-chart-bar"></i> Gerar Relatório
       </button>
+      <button class="novo-btn" style="background-color: #6366f1; color: white;" (click)="generateSmartReport()" [disabled]="isLoadingAI">
+        <i class="fas fa-brain"></i> {{ isLoadingAI ? 'Analisando...' : 'Relatório Inteligente (IA)' }}
+      </button>
       <button class="export-btn" (click)="exportToPDF()">
         <i class="fas fa-file-pdf"></i> Exportar PDF
       </button>
+    </div>
+  </div>
+
+  <div *ngIf="aiAnalysisResult" class="ai-analysis-result" style="margin: 20px 0; padding: 20px; background: #f0fdf4; border: 1px solid #16a34a; border-radius: 8px;">
+    <h4 style="color: #166534; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+      <i class="fas fa-robot"></i> Análise Inteligente (IA)
+    </h4>
+    <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; line-height: 1.6; color: #14532d;">
+      {{ aiAnalysisResult }}
     </div>
   </div>
 

@@ -17,6 +17,8 @@ import { ModeloService } from '../../services/modelo.service';
 import { TipoEquipamentoService } from '../../services/tipo-equipamento.service';
 import { ItemsAlocacaoService } from '../../services/item-alocacao.service';
 import { ItemsDevolucaoService } from '../../services/item-devolucao.service';
+import { AiService } from '../../services/ai/ai.service';
+import { NotificationService } from '../../components/notification/notification.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -84,6 +86,8 @@ export class RelatorioComponent implements OnInit  {
       private itemsDevolucaoService: ItemsDevolucaoService,
       private modeloService: ModeloService,
       private tipoEquipamentoService: TipoEquipamentoService,
+      private aiService: AiService,
+      private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -796,11 +800,10 @@ export class RelatorioComponent implements OnInit  {
             `  • Data: ${data}\n` +
             `  • Marca(s): ${marcas}\n` +
             `  • Modelo(s) (tipo): ${modeloTipo}\n` +
-            `  • Estado(s): ${estado}\n` +
-            `  • Guia: ${guia}`
+            `  • Estado(s): ${estado}`
           );
           
-          tableRows.push({ nr: itemNumber, devolveu: nomeQuemDevolveu, recebeu: nomeQuemRecebeu, data, marcas, modeloTipo, estado, guia });
+          tableRows.push({ nr: itemNumber, devolveu: nomeQuemDevolveu, recebeu: nomeQuemRecebeu, data, marcas, modeloTipo, estado });
         }
       });
       
@@ -822,6 +825,273 @@ export class RelatorioComponent implements OnInit  {
     }
 
     this.isLoadingRelatorios = false;
+  }
+
+  // Variável para controlar carregamento da IA
+  isLoadingAI: boolean = false;
+  aiAnalysisResult: string | null = null;
+
+  async generateSmartReport() {
+    this.isLoadingAI = true;
+    this.aiAnalysisResult = null;
+    
+    // 1. Gerar o relatório padrão primeiro para exibir os dados e tabelas visualmente
+    try {
+      await this.generateReport();
+    } catch (e) {
+      console.error('Erro ao gerar relatório preliminar:', e);
+      this.notificationService.error('Erro ao carregar dados para o relatório.');
+      this.isLoadingAI = false;
+      return;
+    }
+    
+    // 2. Construir o objeto de dados filtrados (similar ao generateReport)
+    const resource: any = {
+      devices: this.equipamentos,
+      allocations: this.alocacoes,
+      models: this.modelos,
+      brands: this.marcas,
+      repair: this.reparacoes,
+      acquisitions: this.aquisicoes,
+      disuse: this.baixas,
+      companies: this.empresas,
+      returned: this.devolucoes
+    };
+
+    const filtered: any = {
+      devices: resource.devices,
+      models: resource.models,
+      brands: resource.brands,
+      disuse: resource.disuse,
+      companies: resource.companies,
+      allocations: this.filterByPeriod(resource.allocations),
+      returned: this.filterByPeriod(resource.returned),
+      acquisitions: this.filterByPeriod(resource.acquisitions),
+      repair: this.filterByPeriod(resource.repair)
+    };
+
+    // Filtrar apenas o que foi selecionado pelo usuário
+    const selectedItems = this.reportItems.filter(item => item.selected);
+    if (selectedItems.length === 0) {
+      alert('Selecione pelo menos um item para gerar o relatório inteligente.');
+      this.isLoadingAI = false;
+      return;
+    }
+
+    const dataToSend: any = {};
+    selectedItems.forEach(item => {
+      dataToSend[item.name] = filtered[item.name];
+    });
+
+    // Verificar volume de dados para evitar payload excessivo
+    let totalRecords = 0;
+    Object.values(dataToSend).forEach((list: any) => {
+      if (Array.isArray(list)) totalRecords += list.length;
+    });
+
+    if (totalRecords > 500) {
+      const confirmMsg = `Atenção: O relatório contém muitos registos (${totalRecords}). A análise por IA pode demorar ou falhar devido ao tamanho dos dados. Deseja continuar?`;
+      if (!confirm(confirmMsg)) {
+        this.isLoadingAI = false;
+        return;
+      }
+    }
+
+    // 3. Enviar para a IA
+    this.aiService.analyzeReport(dataToSend).subscribe({
+      next: (analysisText) => {
+        // 4. Gerar PDF com a análise
+        this.aiAnalysisResult = analysisText;
+        this.exportSmartReportToPDF(analysisText, dataToSend);
+        this.isLoadingAI = false;
+        this.notificationService.success('Relatório inteligente gerado com sucesso!');
+      },
+      error: (err) => {
+        console.error('Erro na análise IA:', err);
+        // Usar NotificationService para feedback mais elegante
+        this.notificationService.error('Erro ao gerar relatório inteligente. Tente novamente mais tarde.');
+        this.isLoadingAI = false;
+      }
+    });
+  }
+
+  async exportSmartReportToPDF(analysisText: string, data: any) {
+    this.isLoadingRelatorios = true;
+    
+    const build = async () => {
+      const [firstBg, secondBg] = await Promise.all([
+        this.loadImage(this.getTemplateBgSrc()),
+        this.loadImage(this.getSecondTemplateBgSrc())
+      ]);
+
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const drawnPages = new Set<number>();
+
+      const headerH = 55; 
+      const footerH = 22;
+      const contentTopY = headerH + 6;
+      const contentBottomY = pageH - footerH - 6;
+
+      const fontFamily = await this.ensureCenturyGothic(doc);
+      doc.setFont(fontFamily, 'normal');
+      doc.setFontSize(12);
+
+      const drawBgPageSpecific = (d: jsPDF, pageNumber: number) => {
+        const img = pageNumber === 1 ? firstBg : secondBg;
+        d.addImage(img, 'PNG', 0, 0, pageW, pageH);
+      };
+
+      drawBgPageSpecific(doc, 1);
+      drawnPages.add(1);
+
+      // --- PÁGINA 1: Título e Análise da IA ---
+      
+      // Metadados
+      const periodo = this.startDate && this.endDate
+        ? `${new Date(this.startDate).toLocaleDateString('pt-PT')} até ${new Date(this.endDate).toLocaleDateString('pt-PT')}`
+        : 'Todo o período';
+      const dataGeracao = this.getCurrentDate();
+
+      let yCursor = contentTopY + 10;
+      
+      // Título Principal
+      if (fontFamily === 'CenturyGothic' && !this.centuryBoldAvailable) doc.setFont('helvetica', 'bold');
+      else doc.setFont(fontFamily, 'bold');
+      
+      doc.setFontSize(16);
+      doc.text('RELATÓRIO INTELIGENTE DE ATIVOS', pageW / 2, yCursor, { align: 'center' });
+      yCursor += 10;
+
+      // Subtítulo / Metadados
+      doc.setFontSize(10);
+      doc.setFont(fontFamily, 'normal');
+      doc.text(`Gerado em: ${dataGeracao} | Período: ${periodo}`, pageW / 2, yCursor, { align: 'center' });
+      yCursor += 15;
+
+      // Título da Análise
+      if (fontFamily === 'CenturyGothic' && !this.centuryBoldAvailable) doc.setFont('helvetica', 'bold');
+      else doc.setFont(fontFamily, 'bold');
+      doc.setFontSize(14);
+      doc.text('ANÁLISE E INSIGHTS (IA)', 15, yCursor);
+      yCursor += 8;
+
+      // Texto da IA
+      doc.setFont(fontFamily, 'normal');
+      doc.setFontSize(11);
+      const splitAnalysis = doc.splitTextToSize(analysisText, pageW - 30);
+      
+      // Verificar se o texto cabe na primeira página, se não, adicionar páginas
+      // Simples lógica de paginação para texto
+      const lineHeight = 5;
+      for (const line of splitAnalysis) {
+        if (yCursor > contentBottomY) {
+          doc.addPage();
+          drawBgPageSpecific(doc, doc.getNumberOfPages());
+          drawnPages.add(doc.getNumberOfPages());
+          yCursor = contentTopY;
+        }
+        doc.text(line, 15, yCursor);
+        yCursor += lineHeight;
+      }
+
+      yCursor += 10;
+
+      // --- TABELAS DE DADOS (Opcional, mas útil para contexto) ---
+      // Reutiliza lógica simplificada de exportToPDF para anexar dados
+      
+      if (yCursor > contentBottomY - 20) {
+        doc.addPage();
+        drawBgPageSpecific(doc, doc.getNumberOfPages());
+        drawnPages.add(doc.getNumberOfPages());
+        yCursor = contentTopY;
+      }
+
+      if (fontFamily === 'CenturyGothic' && !this.centuryBoldAvailable) doc.setFont('helvetica', 'bold');
+      else doc.setFont(fontFamily, 'bold');
+      doc.setFontSize(14);
+      doc.text('DADOS ANALISADOS', 15, yCursor);
+      yCursor += 10;
+
+      // Iterar sobre os itens selecionados para gerar tabelas
+       const selectedItems = this.reportItems.filter(item => item.selected);
+       for (const el of selectedItems) {
+         const entries = data[el.name] || [];
+         if (!entries.length) continue;
+
+         if (yCursor > contentBottomY - 20) {
+            doc.addPage();
+            drawBgPageSpecific(doc, doc.getNumberOfPages());
+            drawnPages.add(doc.getNumberOfPages());
+            yCursor = contentTopY;
+         }
+
+         doc.setFontSize(12);
+         doc.text(el.label.toUpperCase(), 15, yCursor);
+         yCursor += 2;
+
+         // Definir colunas (simplificado do original)
+         let head: string[] = [];
+         let body: any[] = [];
+         
+         // ... (Lógica de colunas idêntica ao switch do exportToPDF original, 
+         // mas copiá-la inteira seria redundante. 
+         // Para simplificar, vou chamar uma função auxiliar ou repetir a lógica essencial)
+         // Vou repetir a lógica essencial de mapeamento para garantir que funcione standalone
+         
+          switch (el.name) {
+          case 'devices':
+            head = ['Modelo', 'Nº de Série', 'Estado'];
+            for (const res of entries) {
+              const modelo = this.modelos.find((m: any) => m.id === res.modeloId);
+              body.push([modelo?.nome || '—', res.numeroSerie || '—', res.estado || '—']);
+            }
+            break;
+          case 'allocations':
+            head = ['Beneficiário', 'Entregador', 'Data'];
+            for (const res of entries) {
+               const beneficiario = this.getUserNameById(res.utilizadorBeneficiarioId) || res.utilizador?.nome || '—';
+               const entregador = this.getUserNameById(res.utilizadorEntregadorId) || '—';
+               const data = res.dataAlocacao ? new Date(res.dataAlocacao).toLocaleDateString('pt-PT') : '—';
+               body.push([beneficiario, entregador, data]);
+            }
+            break;
+          // ... outros casos simplificados
+          default:
+             head = ['Item'];
+             body = entries.map((e:any) => [JSON.stringify(e).substring(0, 50)]);
+        }
+
+        autoTable(doc, {
+          head: [head],
+          body,
+          startY: yCursor + 2,
+          theme: 'grid',
+          styles: { fontSize: 10, font: fontFamily, cellPadding: 2, textColor: 30 },
+          headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: 'bold' },
+          margin: { left: 15, right: 15, bottom: footerH },
+          willDrawPage: (data: any) => {
+            if (!drawnPages.has(data.pageNumber)) {
+              drawBgPageSpecific(doc, data.pageNumber);
+              drawnPages.add(data.pageNumber);
+            }
+          }
+        });
+
+        yCursor = (doc as any).lastAutoTable.finalY + 10;
+       }
+
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      // Salvar diretamente para evitar bloqueio de popup
+      doc.save('relatorio_inteligente_ia.pdf');
+      // window.open(url, '_blank');
+    };
+
+    build()
+      .catch(err => console.error('Erro ao gerar PDF Inteligente:', err))
+      .finally(() => { this.isLoadingRelatorios = false; });
   }
 
   async exportToPDF() {
@@ -958,6 +1228,8 @@ export class RelatorioComponent implements OnInit  {
         // Definir colunas e linhas conforme o tipo
         let head: string[] = [];
         const body: any[] = [];
+        let columnStyles: any = {}; // Estilos específicos por coluna
+
         switch (el.name) {
           case 'devices':
             head = ['Modelo', 'Nº de Série', 'Estado'];
@@ -1036,7 +1308,19 @@ export class RelatorioComponent implements OnInit  {
             }
             break;
           case 'returned':
-            head = ['Quem devolveu', 'Quem recebeu', 'Data', 'Marca', 'Modelo (tipo)', 'Estado', 'Guia'];
+            // Ajustar cabeçalhos para serem mais curtos e diretos
+            head = ['Devolvido por', 'Recebido por', 'Data', 'Marca', 'Modelo (Tipo)', 'Estado'];
+            
+            // Definir larguras específicas para evitar quebra de layout "invulgar"
+            columnStyles = {
+              0: { cellWidth: 35 }, // Devolvido por
+              1: { cellWidth: 35 }, // Recebido por
+              2: { cellWidth: 25 }, // Data
+              3: { cellWidth: 25 }, // Marca
+              4: { cellWidth: 'auto' }, // Modelo (Tipo) - Flexível
+              5: { cellWidth: 25 }  // Estado
+            };
+
             for (const res of entries) {
               const nomeQuemDevolveu = this.getUserNameById(res.utilizadorDevolveuId) || '—';
               const nomeQuemRecebeu = this.getUserNameById(res.utilizadorRecebeuId) || '—';
@@ -1044,7 +1328,7 @@ export class RelatorioComponent implements OnInit  {
               const marcas = this.getMarcasDaDevolucao(res.id);
               const modeloTipo = this.getModelosTiposDaDevolucao(res.id);
               const estado = this.getEstadosDaDevolucao(res.id);
-              body.push([nomeQuemDevolveu, nomeQuemRecebeu, data, marcas, modeloTipo, estado, res.pathGuiaDevolucao || '—']);
+              body.push([nomeQuemDevolveu, nomeQuemRecebeu, data, marcas, modeloTipo, estado]);
             }
             break;
         }
@@ -1054,7 +1338,8 @@ export class RelatorioComponent implements OnInit  {
           body,
           startY: yCursor + 1, // tabela mais próxima do título
           theme: 'grid',
-          styles: { fontSize: 12, font: fontFamily, cellPadding: 4, textColor: 30, halign: 'left' },
+          styles: { fontSize: 10, font: fontFamily, cellPadding: 3, textColor: 30, halign: 'left', overflow: 'linebreak' }, // Fonte levemente reduzida e padding ajustado
+          columnStyles: columnStyles, // Aplicar estilos de coluna dinâmicos
           headStyles: { fillColor: [241, 245, 249], textColor: 30, lineColor: [203, 213, 225], lineWidth: 0.3, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [249, 250, 251] },
           bodyStyles: { lineColor: [229, 231, 235], lineWidth: 0.2 },
@@ -1077,8 +1362,14 @@ export class RelatorioComponent implements OnInit  {
         }
       }
 
-      const fileName = `relatorio_${selecionados.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-      doc.save(fileName);
+      const pdfBlob = doc.output('blob');
+      try {
+        const url = URL.createObjectURL(pdfBlob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (e) {
+        console.error('Erro ao abrir PDF em nova aba:', e);
+      }
     };
 
     build()
@@ -1098,6 +1389,13 @@ export class RelatorioComponent implements OnInit  {
   }
 
   private async ensureCenturyGothic(doc: jsPDF): Promise<string> {
+    // Como os ficheiros de fonte Century Gothic não estão presentes nos assets, 
+    // retornamos diretamente 'helvetica' para evitar erros 404 no console.
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    return 'helvetica';
+    
+    /* Código original mantido para referência futura caso as fontes sejam adicionadas:
     try {
       const fontResp = await fetch('assets/CenturyGothic.ttf');
       if (fontResp.ok) {
@@ -1118,18 +1416,16 @@ export class RelatorioComponent implements OnInit  {
             this.centuryBoldAvailable = true;
           }
         } catch (_) {
-          // ignora; fallback lida com negrito quando não disponível
           this.centuryBoldAvailable = false;
         }
         return 'CenturyGothic';
       }
     } catch (_) {
-      // Ignora e faz fallback
     }
-    // Fallback para Helvetica caso a fonte não esteja disponível nos assets
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(12);
     return 'helvetica';
+    */
   }
   
 

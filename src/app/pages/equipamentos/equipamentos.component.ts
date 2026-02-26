@@ -46,6 +46,14 @@ export class EquipamentosComponent implements OnInit {
   filtroAquisicao: number | null = null;
   filtroEstado: string | null = null;
 
+  private readonly estadosOcultos = new Set<string>([
+    'BAIXADO',
+    'PERDIDO',
+    'STOCK_AVARIADO',
+    'PATRIMONIO_AVARIADO',
+    'PATRIMONIO_BOM'
+  ]);
+
   form: FormGroup;
   showModal = false;
   editando = false;
@@ -261,10 +269,12 @@ export class EquipamentosComponent implements OnInit {
 
   getEquipamentosFiltrados() {
     return this.equipamentos.filter(eq => {
+      const estado = (eq?.estado ?? '').toString().toUpperCase();
+      if (this.estadosOcultos.has(estado)) return false;
       return (!this.filtroModelo || eq.modeloId === this.filtroModelo) &&
              (!this.filtroTipo || eq.tipoEquipamentoId === this.filtroTipo) &&
              (!this.filtroAquisicao || eq.aquisicaoId === this.filtroAquisicao) &&
-             (!this.filtroEstado || (eq.estado && eq.estado === this.filtroEstado));
+             (!this.filtroEstado || (estado && estado === this.filtroEstado.toUpperCase()));
     });
   }
 

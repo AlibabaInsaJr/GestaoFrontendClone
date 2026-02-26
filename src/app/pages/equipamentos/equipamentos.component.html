@@ -64,9 +64,9 @@
       <button (click)="carregarEquipamentosPaginado()" [disabled]="loading || !hasMore">
         {{ loading ? 'Carregando...' : (hasMore ? 'Carregar mais' : 'Todos carregados') }}
       </button>
-      <span *ngIf="total > 0">Carregados {{ equipamentos.length }} de {{ total }}</span>
+      <span *ngIf="total > 0">Exibindo {{ getEquipamentosFiltrados().length }} de {{ equipamentos.length }}</span>
     </div>
-    <div class="empty-state" *ngIf="!loading && equipamentos.length === 0">
+    <div class="empty-state" *ngIf="!loading && getEquipamentosFiltrados().length === 0">
       Nenhum equipamento encontrado.
     </div>
   

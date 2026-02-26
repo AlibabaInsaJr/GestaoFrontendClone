@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { forkJoin } from 'rxjs';
 import { DevolucoesService } from '../../services/devolucoes.service';
 import { MarcaService } from '../../services/marca.service';
 import { AlocacaoService } from '../../services/alocacoes.service';
@@ -264,6 +265,14 @@ export class DevolucoesComponent implements OnInit {
       }
 
       return filtroUtilizadorOK && filtroTecnicoOK && buscaOK;
+    })
+    .sort((a: any, b: any) => {
+      const da = a?.dataDevolucao ? new Date(a.dataDevolucao).getTime() : 0;
+      const db = b?.dataDevolucao ? new Date(b.dataDevolucao).getTime() : 0;
+      if (db !== da) return db - da; // mais recentes primeiro
+      const ia = typeof a?.id === 'number' ? a.id : 0;
+      const ib = typeof b?.id === 'number' ? b.id : 0;
+      return ib - ia; // fallback por ID
     });
   }
 
@@ -364,19 +373,23 @@ export class DevolucoesComponent implements OnInit {
             };
           }).filter(item => item.itemsAlocacaoId !== null);
 
-          for (const item of itens) {
-            this.itemsDevolucaoService.criar(item).subscribe({
-              error: err => console.error('Erro ao criar item de devolução:', err)
-            });
-          }
+          const requests = itens.map(item => this.itemsDevolucaoService.criar(item));
 
-          alert('Devolução registrada com sucesso');
-          this.fecharModal();
-          this.carregarDevolucoes();
-          this.carregarItemsAlocacao();
-          this.carregarEquipamentos();
+          forkJoin(requests).subscribe({
+            next: () => {
+              alert('Devolução registrada com sucesso');
+              this.fecharModal();
+              this.carregarDevolucoes();
+              this.carregarItemsAlocacao();
+              this.carregarEquipamentos();
+            },
+            error: (err: any) => {
+              console.error('Erro ao registrar itens da devolução:', err);
+              alert('Erro ao registrar alguns itens da devolução');
+            }
+          });
         },
-        error: err => {
+        error: (err: any) => {
           console.error('Erro ao registrar devolução:', err);
           alert('Erro ao registrar devolução');
         }

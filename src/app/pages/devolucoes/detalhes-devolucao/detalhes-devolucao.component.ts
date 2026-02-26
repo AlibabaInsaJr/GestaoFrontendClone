@@ -1,13 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';  // Importando CommonModule
 import { RouterModule } from '@angular/router';
 import { Location } from '@angular/common';
 import { ItemsDevolucaoService } from '../../../services/item-devolucao.service';
-import { ItemsAlocacaoService } from '../../../services/item-alocacao.service';
 import { DevolucoesService } from '../../../services/devolucoes.service';
 import { UtilizadorService } from '../../../services/utilizador.service';
 import { EquipamentoService } from '../../../services/equipamento.service';
+import { MarcaService } from '../../../services/marca.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -25,6 +25,9 @@ export class DetalhesDevolucaoComponent implements OnInit {
   historicoEquipamentos: { [equipamentoId: number]: any[] } = {};
   equipamento: any;
   equipamentosMap = new Map<number, any>();
+  modelos: any[] = [];
+  tipos: any[] = [];
+  marcas: any[] = [];
   // Flag para controlar o modo de impressão da Guia de Devolução
   printMode = false;
 
@@ -34,14 +37,16 @@ export class DetalhesDevolucaoComponent implements OnInit {
     private itemsDevolucaoService: ItemsDevolucaoService,
     private utilizadorService: UtilizadorService,
     private equipamentoService: EquipamentoService,
-    private itemsAlocacaoService: ItemsAlocacaoService,
-    private location: Location
+    private marcaService: MarcaService,
+    private location: Location,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.devolucaoId = +this.route.snapshot.paramMap.get('id')!;
     this.carregarDevolucao();
     this.carregarUtilizadores();
+    this.carregarMarcas();
   }
 
   carregarDevolucao() {
@@ -52,11 +57,11 @@ export class DetalhesDevolucaoComponent implements OnInit {
         if (this.devolucao?.equipamentoId) {
           this.equipamentoService.buscarPorId(this.devolucao.equipamentoId).subscribe({
             next: eq => this.equipamento = eq,
-            error: err => console.error('Erro ao carregar equipamento', err)
+            error: (err: any) => console.error('Erro ao carregar equipamento', err)
           });
         }
       },
-      error: (err) => console.error('Erro ao buscar devolução:', err)
+      error: (err: any) => console.error('Erro ao buscar devolução:', err)
     });
   }
 
@@ -64,50 +69,65 @@ export class DetalhesDevolucaoComponent implements OnInit {
     this.itemsDevolucaoService.listarPorDevolucao(this.devolucaoId).subscribe({
       next: (itens) => {
         this.itensDevolucao = itens || [];
-        // Primeiro carregamos todos itens de alocação para resolver equipamentoId quando ausente
-        this.itemsAlocacaoService.listar().subscribe({
-          next: (todosItensAloc) => {
-            const mapaItemAlocPorId = new Map<number, any>();
-            (todosItensAloc || []).forEach(it => mapaItemAlocPorId.set(it.id, it));
 
-            // Obter IDs únicos de equipamentos a partir de equipamentoId direto ou via itemsAlocacaoId
-            const equipamentosIds = new Set<number>();
-            for (const item of this.itensDevolucao) {
-              const direto = item?.equipamentoId || item?.equipamento?.id;
-              const viaItemAloc = (() => {
-                const itemAlocId = item?.itemsAlocacaoId || item?.itemAlocacaoId;
-                const itAloc = itemAlocId ? mapaItemAlocPorId.get(itemAlocId) : undefined;
-                return itAloc?.equipamentoId || itAloc?.equipamento?.id;
-              })();
-              const eqId = direto || viaItemAloc;
-              // Atualiza o item para que o template consiga aceder pelo equipamentoId
-              if (!item.equipamentoId && eqId) {
-                item.equipamentoId = eqId;
-              }
-              if (eqId) equipamentosIds.add(eqId);
-            }
+        // Carregar modelos e tipos ANTES de buscar equipamentos individualmente
+        this.equipamentoService.listarModelos().subscribe({
+          next: (modelos) => {
+            this.modelos = modelos;
+            this.equipamentoService.listarTipos().subscribe({
+              next: (tipos) => {
+                this.tipos = tipos;
 
-            // Buscar cada equipamento e povoar o mapa
-            equipamentosIds.forEach(eqId => {
-              if (!this.equipamentosMap.has(eqId)) {
-                this.equipamentoService.buscarPorId(eqId).subscribe({
-                  next: equipamento => this.equipamentosMap.set(eqId, equipamento),
-                  error: err => console.error('Erro ao carregar equipamento', err)
+                // Agora buscar cada equipamento usando o ID que vem do backend
+                this.itensDevolucao.forEach(item => {
+                  const eqId = item.equipamentoId; 
+                  if (eqId && !this.equipamentosMap.has(eqId)) {
+                    this.equipamentoService.buscarPorId(eqId).subscribe({
+                      next: equipamento => {
+                        // Enriquecer o objeto equipamento com Modelo e Tipo
+                        if (equipamento.modeloId) {
+                            const modelo = this.modelos.find((m: any) => m.id === equipamento.modeloId);
+                            if (modelo) equipamento.modelo = modelo;
+                        }
+                        if (equipamento.tipoEquipamentoId) {
+                            const tipo = this.tipos.find((t: any) => t.id === equipamento.tipoEquipamentoId);
+                            if (tipo) equipamento.tipoEquipamento = tipo;
+                        }
+
+                        this.equipamentosMap.set(eqId, equipamento);
+                        // Forçar atualização da view
+                        this.itensDevolucao = [...this.itensDevolucao];
+                        this.cdr.detectChanges();
+                      },
+                      error: (err: any) => {
+                        console.error('Erro ao carregar equipamento', err);
+                      }
+                    });
+                  }
                 });
-              }
+
+              },
+              error: (err: any) => console.error('Erro ao carregar tipos de equipamento', err)
             });
           },
-          error: (err) => console.error('Erro ao carregar itens de alocação para mapear equipamentos:', err)
+          error: (err: any) => console.error('Erro ao carregar modelos', err)
         });
       },
-      error: (err) => console.error('Erro ao buscar itens da devolução:', err)
+      error: (err: any) => console.error('Erro ao buscar itens da devolução:', err)
     });
   }
 
   carregarUtilizadores() {
     this.utilizadorService.listar().subscribe({
       next: (dados) => this.utilizadores = dados,
-      error: (err) => console.error('Erro ao carregar utilizadores:', err)
+      error: (err: any) => console.error('Erro ao carregar utilizadores:', err)
+    });
+  }
+
+  carregarMarcas() {
+    this.marcaService.listar().subscribe({
+      next: (dados) => this.marcas = dados || [],
+      error: (err: any) => { console.error('Erro ao carregar marcas:', err); this.marcas = []; }
     });
   }
 
@@ -124,6 +144,15 @@ export class DetalhesDevolucaoComponent implements OnInit {
   // Acesso seguro ao objeto de equipamento para uso direto no template
   getEquipamentoObj(id: number): any | null {
     return this.equipamentosMap.get(id) || null;
+  }
+
+  getMarcaNomePorModeloId(modeloId: number): string {
+    if (!modeloId) return '';
+    const modelo = this.modelos.find((m: any) => m.id === modeloId);
+    if (!modelo) return '';
+    const marcaId = (modelo as any).marcaId ?? (modelo as any).marca_id ?? (modelo as any).marca;
+    const marca = this.marcas.find((mc: any) => mc.id === marcaId);
+    return marca ? (marca.nome ?? marca.designacao ?? marca.name ?? '') : '';
   }
 
   voltar() {

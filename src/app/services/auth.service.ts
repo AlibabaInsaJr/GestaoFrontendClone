@@ -349,6 +349,13 @@ export class AuthService {
   }
 
   /**
+   * Verifica se o usuário é administrador
+   */
+  isAdmin(): boolean {
+    return this.hasRole('ROLE_ADMIN') || this.hasRole('ADMIN');
+  }
+
+  /**
    * Atualiza o perfil do usuário
    */
   updateProfile(userData: any): Observable<any> {

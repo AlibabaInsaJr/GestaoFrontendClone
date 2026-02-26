@@ -15,11 +15,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   if (isBackendUrl) {
     const token = authService.getToken();
     if (token) {
+      console.log(`AuthInterceptor: Adicionando token à requisição para ${req.url}`);
       authReq = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
         }
       });
+    } else {
+      console.warn(`AuthInterceptor: Sem token para requisição backend ${req.url}`);
     }
   }
 

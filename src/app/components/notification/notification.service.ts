@@ -5,8 +5,21 @@ import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
   providedIn: 'root'
 })
 export class NotificationService {
-
   constructor(private snackBar: MatSnackBar) {}
+
+  /**
+   * Alias para showSuccess (usado pelo relatorio.component)
+   */
+  success(message: string, duration: number = 3000): void {
+    this.showSuccess(message, duration);
+  }
+
+  /**
+   * Alias para showError (usado pelo relatorio.component)
+   */
+  error(message: string, duration: number = 5000): void {
+    this.showError(message, duration);
+  }
 
   /**
    * Mostra uma notificação de sucesso

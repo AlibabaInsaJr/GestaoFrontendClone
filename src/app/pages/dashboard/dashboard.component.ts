@@ -34,6 +34,8 @@ interface Activity {
   status: string;
 }
 
+import { AuthService } from '../../services/auth.service';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -50,6 +52,8 @@ interface Activity {
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit, AfterViewInit {
+  isAdmin = false;
+
   verDetalheS(_t91: Activity) {
     throw new Error('Method not implemented.');
   }
@@ -92,6 +96,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   chartColors: string[] = ['#4CAF50', '#FFC107', '#2196F3', '#F44336'];
 
+  private readonly estadosOcultos = new Set<string>([
+    'BAIXADO',
+    'PERDIDO',
+    'PATRIMONIO_AVARIADO',
+    'PATRIMONIO_BOM'
+  ]);
+
   constructor(
     private equipamentoService: EquipamentoService,
     private alocacaoService: AlocacaoService,
@@ -101,7 +112,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private datePipe: DatePipe,
     private router: Router,
     private auditService: AuditService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private authService: AuthService
   ) {}
 
   private chartsInitialized = false;
@@ -118,9 +130,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   loadErrors: string[] = [];
 
   ngOnInit(): void {
+    this.isAdmin = this.authService.isAdmin();
     this.carregarEstatisticas();
     this.carregarAtividadesRecentes();
     console.log('Dashboard inicializado');
+  }
+
+  navegarParaAdmin(): void {
+    this.router.navigate(['/admin/users']);
   }
 
   limparAtividades(): void {
@@ -152,12 +169,17 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       )
     }).subscribe({
       next: ({ equipamentos, alocacoes, reparacoes, devolucoes, baixas }) => {
+        const equipamentosVisiveis = (equipamentos || []).filter((e: any) => {
+          const estado = (e?.estado ?? '').toString().trim().toUpperCase();
+          return !this.estadosOcultos.has(estado);
+        });
+
         // Estatísticas principais
-        this.equipmentStats.total = equipamentos?.length || 0;
-        this.equipmentStats.allocated = (equipamentos || []).filter((e: any) => e.estado === 'ALOCADO').length;
-        this.equipmentStats.inRepair = (equipamentos || []).filter((e: any) => e.estado === 'REPARACAO').length;
-        this.equipmentStats.available = (equipamentos || []).filter((e: any) => e.estado === 'STOCK_NOVO' || e.estado === 'STOCK_BOM').length;
-        this.equipmentStats.writtenOff = (equipamentos || []).filter((e: any) => e.estado === 'BAIXADO').length;
+        this.equipmentStats.total = equipamentosVisiveis.length;
+        this.equipmentStats.allocated = equipamentosVisiveis.filter((e: any) => e.estado === 'ALOCADO').length;
+        this.equipmentStats.inRepair = equipamentosVisiveis.filter((e: any) => e.estado === 'REPARACAO').length;
+        this.equipmentStats.available = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_NOVO' || e.estado === 'STOCK_BOM').length;
+        this.equipmentStats.writtenOff = equipamentosVisiveis.filter((e: any) => e.estado === 'BAIXADO').length;
 
         // Contadores por tipo de ação
         this.allocationTypes = [
@@ -168,10 +190,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         ];
 
         // Distribuição por estado (mapear enums do backend para rótulos de UI)
-        const novo = (equipamentos || []).filter((e: any) => e.estado === 'STOCK_NOVO').length;
-        const bom = (equipamentos || []).filter((e: any) => e.estado === 'STOCK_BOM' || e.estado === 'PATRIMONIO_BOM').length;
-        const avariado = (equipamentos || []).filter((e: any) => e.estado === 'STOCK_AVARIADO' || e.estado === 'PATRIMONIO_AVARIADO').length;
-        const obsoleto = (equipamentos || []).filter((e: any) => e.estado === 'BAIXADO' || e.estado === 'PERDIDO').length;
+        const novo = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_NOVO').length;
+        const bom = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_BOM').length;
+        const avariado = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_AVARIADO').length;
+        const obsoleto = equipamentosVisiveis.filter((e: any) => e.estado === 'BAIXADO' || e.estado === 'PERDIDO').length;
 
         this.equipmentByStatus = [
           { status: 'NOVO', count: novo },
