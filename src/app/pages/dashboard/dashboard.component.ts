@@ -34,6 +34,13 @@ interface Activity {
   status: string;
 }
 
+interface CalendarDay {
+  date: Date;
+  dayNumber: number;
+  inCurrentMonth: boolean;
+  isToday: boolean;
+}
+
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -78,6 +85,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   repairTrend: number[] = [];
   returnTrend: number[] = [];
   months: string[] = [];
+  selectedTrend: 'alocacoes' | 'reparacoes' | 'devolucoes' = 'alocacoes';
 
   recentActivities: Activity[] = [];
   allocationTypes = [
@@ -95,6 +103,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   ];
 
   chartColors: string[] = ['#4CAF50', '#FFC107', '#2196F3', '#F44336'];
+  weekDays: string[] = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  calendarDays: CalendarDay[] = [];
+  calendarMonthLabel = '';
+  private calendarCursor = new Date();
 
   private readonly estadosOcultos = new Set<string>([
     'BAIXADO',
@@ -131,6 +143,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.isAdmin = this.authService.isAdmin();
+    this.generateCalendar();
     this.carregarEstatisticas();
     this.carregarAtividadesRecentes();
     console.log('Dashboard inicializado');
@@ -316,32 +329,72 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     
     // Inicializa os gráficos com dados reais
     console.log('Inicializando gráficos');
+
+    const baseTooltip = {
+      backgroundColor: '#101828',
+      titleColor: '#ffffff',
+      bodyColor: '#dbe4ff',
+      padding: 12,
+      cornerRadius: 12,
+      displayColors: false
+    };
     
-    // Gráfico de Pizza - Distribuição por estado de equipamento
+    // Gráfico de Rosca - Distribuição por tipo de ação
     if (this.pieChartRef?.nativeElement) {
-      const pieCtx = this.pieChartRef.nativeElement.getContext('2d');
-      if (pieCtx) {
-        this.charts['pie'] = new Chart(pieCtx, {
-          type: 'pie',
+      const doughnutCtx = this.pieChartRef.nativeElement.getContext('2d');
+      if (doughnutCtx) {
+        this.charts['pie'] = new Chart(doughnutCtx, {
+          type: 'doughnut',
           data: {
             labels: this.allocationTypes.map(a => a.label),
             datasets: [{
               data: this.allocationTypes.map(a => a.count),
-              backgroundColor: this.chartColors
+              backgroundColor: [
+                '#7C3AED',
+                '#F59E0B',
+                '#06B6D4',
+                '#F43F5E'
+              ],
+              borderWidth: 0,
+              borderRadius: 10,
+              hoverOffset: 10,
+              spacing: 4
             }]
           },
           options: {
             responsive: true,
-            plugins: { legend: { position: 'bottom' } }
+            maintainAspectRatio: false,
+            cutout: '72%',
+            rotation: -110,
+            plugins: {
+              legend: { display: false },
+              tooltip: baseTooltip
+            }
           }
         });
       }
     }
     
-    // Gráfico de Barras - Contagem de tipos de atividade
+    // Gráfico de Barras - Estado dos equipamentos
     if (this.barChartRef?.nativeElement) {
       const barCtx = this.barChartRef.nativeElement.getContext('2d');
       if (barCtx) {
+        const barGradientA = barCtx.createLinearGradient(0, 0, 0, 260);
+        barGradientA.addColorStop(0, '#60A5FA');
+        barGradientA.addColorStop(1, '#2563EB');
+
+        const barGradientB = barCtx.createLinearGradient(0, 0, 0, 260);
+        barGradientB.addColorStop(0, '#38BDF8');
+        barGradientB.addColorStop(1, '#06B6D4');
+
+        const barGradientC = barCtx.createLinearGradient(0, 0, 0, 260);
+        barGradientC.addColorStop(0, '#A78BFA');
+        barGradientC.addColorStop(1, '#7C3AED');
+
+        const barGradientD = barCtx.createLinearGradient(0, 0, 0, 260);
+        barGradientD.addColorStop(0, '#FB7185');
+        barGradientD.addColorStop(1, '#F43F5E');
+
         this.charts['bar'] = new Chart(barCtx, {
           type: 'bar',
           data: {
@@ -349,13 +402,35 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             datasets: [{
               label: 'Estados',
               data: this.equipmentByStatus.map(s => s.count),
-              backgroundColor: this.chartColors
+              backgroundColor: [barGradientA, barGradientB, barGradientC, barGradientD],
+              borderRadius: 14,
+              borderSkipped: false,
+              maxBarThickness: 34
             }]
           },
           options: {
             responsive: true,
-            scales: { y: { beginAtZero: true } },
-            plugins: { legend: { display: false } }
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: '#667085', font: { weight: 600 } }
+              },
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(148, 163, 184, 0.18)'
+                },
+                ticks: {
+                  color: '#94A3B8',
+                  stepSize: 1
+                }
+              }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: baseTooltip
+            }
           }
         });
       }
@@ -364,8 +439,40 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     // Gráficos de Linha - Tendências mensais
     const lineOptions = {
       responsive: true,
-      scales: { y: { beginAtZero: true } },
-      plugins: { legend: { display: false } }
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#94A3B8' }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(148, 163, 184, 0.14)'
+          },
+          ticks: { color: '#94A3B8', stepSize: 1 }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: baseTooltip
+      },
+      elements: {
+        point: {
+          radius: 0,
+          hoverRadius: 6,
+          hoverBorderWidth: 3,
+          backgroundColor: '#ffffff'
+        },
+        line: {
+          tension: 0.42,
+          borderWidth: 3
+        }
+      }
     } as any;
     
     if (this.lineChartRef?.nativeElement) {
@@ -375,59 +482,105 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           type: 'line',
           data: {
             labels: this.months,
-            datasets: [{
-              label: 'Alocações',
-              data: this.allocationTrend,
-              borderColor: '#4CAF50',
-              backgroundColor: 'rgba(76, 175, 80, 0.2)',
-              tension: 0.3
-            }]
+            datasets: [this.buildMainTrendDataset(lineCtx)]
           },
           options: lineOptions
         });
       }
     }
     
-    if (this.lineChart2Ref?.nativeElement) {
-      const line2Ctx = this.lineChart2Ref.nativeElement.getContext('2d');
-      if (line2Ctx) {
-        this.charts['line2'] = new Chart(line2Ctx, {
-          type: 'line',
-          data: {
-            labels: this.months,
-            datasets: [{
-              label: 'Reparações',
-              data: this.repairTrend,
-              borderColor: '#FFC107',
-              backgroundColor: 'rgba(255, 193, 7, 0.2)',
-              tension: 0.3
-            }]
-          },
-          options: lineOptions
-        });
-      }
-    }
-    
-    if (this.lineChart3Ref?.nativeElement) {
-      const line3Ctx = this.lineChart3Ref.nativeElement.getContext('2d');
-      if (line3Ctx) {
-        this.charts['line3'] = new Chart(line3Ctx, {
-          type: 'line',
-          data: {
-            labels: this.months,
-            datasets: [{
-              label: 'Devoluções',
-              data: this.returnTrend,
-              borderColor: '#2196F3',
-              backgroundColor: 'rgba(33, 150, 243, 0.2)',
-              tension: 0.3
-            }]
-          },
-          options: lineOptions
-        });
-      }
-    }
    }
+
+  onTrendChange(event: Event): void {
+    const next = (event.target as HTMLSelectElement).value as 'alocacoes' | 'reparacoes' | 'devolucoes';
+    this.selectedTrend = next;
+    this.refreshMainTrendChart();
+  }
+
+  private refreshMainTrendChart(): void {
+    const chart = this.charts['line1'];
+    const ctx = this.lineChartRef?.nativeElement?.getContext('2d');
+    if (!chart || !ctx) return;
+
+    const dataset = this.buildMainTrendDataset(ctx);
+    chart.data.datasets = [dataset];
+    chart.update();
+  }
+
+  private buildMainTrendDataset(ctx: CanvasRenderingContext2D) {
+    const configMap = {
+      alocacoes: {
+        label: 'Alocações',
+        data: this.allocationTrend,
+        borderColor: '#4F7CFF',
+        gradientStart: 'rgba(79, 124, 255, 0.35)',
+        gradientEnd: 'rgba(79, 124, 255, 0.02)'
+      },
+      reparacoes: {
+        label: 'Reparações',
+        data: this.repairTrend,
+        borderColor: '#FF9B3F',
+        gradientStart: 'rgba(255, 155, 63, 0.35)',
+        gradientEnd: 'rgba(255, 155, 63, 0.02)'
+      },
+      devolucoes: {
+        label: 'Devoluções',
+        data: this.returnTrend,
+        borderColor: '#06B6D4',
+        gradientStart: 'rgba(6, 182, 212, 0.35)',
+        gradientEnd: 'rgba(6, 182, 212, 0.02)'
+      }
+    } as const;
+
+    const current = configMap[this.selectedTrend];
+    const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+    gradient.addColorStop(0, current.gradientStart);
+    gradient.addColorStop(1, current.gradientEnd);
+
+    return {
+      label: current.label,
+      data: current.data,
+      borderColor: current.borderColor,
+      backgroundColor: gradient,
+      fill: true,
+      pointHoverBorderColor: current.borderColor
+    };
+  }
+
+  prevCalendarMonth(): void {
+    this.calendarCursor = new Date(this.calendarCursor.getFullYear(), this.calendarCursor.getMonth() - 1, 1);
+    this.generateCalendar();
+  }
+
+  nextCalendarMonth(): void {
+    this.calendarCursor = new Date(this.calendarCursor.getFullYear(), this.calendarCursor.getMonth() + 1, 1);
+    this.generateCalendar();
+  }
+
+  private generateCalendar(): void {
+    const year = this.calendarCursor.getFullYear();
+    const month = this.calendarCursor.getMonth();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    this.calendarMonthLabel = `${monthNames[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay();
+    const startDate = new Date(year, month, 1 - startOffset);
+
+    this.calendarDays = [];
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
+      const today = new Date();
+      const isToday = date.toDateString() === today.toDateString();
+
+      this.calendarDays.push({
+        date,
+        dayNumber: date.getDate(),
+        inCurrentMonth: date.getMonth() === month,
+        isToday
+      });
+    }
+  }
 
   /**
    * Formata a data da atividade para exibição

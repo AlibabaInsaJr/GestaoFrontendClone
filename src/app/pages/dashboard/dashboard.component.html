@@ -1,170 +1,258 @@
-<div class="dashboard-container">
-  <!-- Header --> 
-  <header class="dashboard-header"> 
-    <div class="header-content"> 
-      <h1>Gestão de Equipamentos</h1>
-      <!-- Botão de Gestão de Acessos removido temporariamente -->
-    </div> 
+<div class="dashboard-tech">
+  <header class="dashboard-topbar">
+    <div class="welcome-block">
+      <span class="eyebrow-label">Equipment intelligence</span>
+      <h1>Bem-vindo ao centro de controlo</h1>
+    </div>
+
+    <div class="topbar-actions">
+      <div class="search-shell">
+        <span class="material-icons">search</span>
+        <span>Pesquisar métricas</span>
+      </div>
+
+      <div class="profile-shell">
+        <div class="notification-dot">
+          <span class="material-icons">notifications_none</span>
+        </div>
+        <div class="profile-copy">
+          <small>Dashboard</small>
+          <strong>Gestão de Ativos</strong>
+        </div>
+        <div class="avatar-badge">GA</div>
+      </div>
+    </div>
   </header>
 
-  <!-- Alerts / Loading -->
   <div class="dashboard-alerts" *ngIf="isLoading || loadErrors.length">
-    <div *ngIf="isLoading" class="alert alert-info">A carregar dados do dashboard...</div>
-    <div *ngIf="loadErrors.length" class="alert alert-warning">
-      Não foi possível carregar todos os dados do dashboard.
-      <ul>
-        <li *ngFor="let err of loadErrors">{{ err }}</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Stats Cards (Interativos) --> 
-  <div class="stats-cards"> 
-    <div class="stat-card total" (click)="navegarPara('equipamentos')" style="cursor: pointer;"> 
-      <div class="stat-icon"> 
-        <span class="material-icons">devices</span> 
-      </div> 
-      <div class="stat-content"> 
-        <h3>Total de Equipamentos</h3> 
-        <p class="stat-value">{{ equipmentStats.total }}</p> 
-        <p class="stat-description">Todos os equipamentos registrados</p> 
-      </div> 
-    </div> 
- 
-    <div class="stat-card allocated" (click)="navegarPara('alocacoes')" style="cursor: pointer;"> 
-      <div class="stat-icon"> 
-        <span class="material-icons">assignment_turned_in</span> 
-      </div> 
-      <div class="stat-content"> 
-        <h3>Equipamentos Alocados</h3> 
-        <p class="stat-value">{{ equipmentStats.allocated }}</p> 
-        <p class="stat-percentage"> 
-          <span class="highlight">{{ getAllocatedPercentage() }}%</span> do total 
-        </p> 
-      </div> 
-    </div> 
- 
-    <div class="stat-card repair" (click)="navegarPara('reparacoes')" style="cursor: pointer;"> 
-      <div class="stat-icon"> 
-        <span class="material-icons">build</span> 
-      </div> 
-      <div class="stat-content"> 
-        <h3>Em Reparação</h3> 
-        <p class="stat-value">{{ equipmentStats.inRepair }}</p> 
-        <p class="stat-percentage"> 
-          <span class="highlight warning">{{ getRepairPercentage() }}%</span> do total 
-        </p> 
-      </div> 
-    </div> 
- 
-    <div class="stat-card available" (click)="navegarPara('devolucoes')" style="cursor: pointer;"> 
-      <div class="stat-icon"> 
-        <span class="material-icons">assignment_return</span> 
-      </div> 
-      <div class="stat-content"> 
-        <h3>Devoluções</h3> 
-        <p class="stat-value">{{ allocationTypes[2].count }}</p> 
- 
-        <p class="stat-description">Registos de equipamentos devolvidos</p> 
-      </div> 
-    </div> 
-  </div>
-
-  <!-- Charts Container --> 
-  <div class="charts-container"> 
-    <div class="chart-card"> 
-      <div class="chart-header"> 
-        <h2>Distribuição por Tipo de Ação</h2> 
-        <p class="chart-description">Visão geral das ações realizadas</p> 
-      </div> 
-      <div class="chart-body"> 
-        <div class="chart"> 
-        <canvas width="200px" height="100px" #pieChart></canvas> 
-        </div> 
-        <div class="chart-legend"> 
-          <div class="legend-item" *ngFor="let type of allocationTypes; let i = index"> 
-            <div class="legend-color" [style.background-color]="chartColors[i]"></div> 
-            <span>{{ type.label }}</span> 
-          </div> 
-        </div> 
-      </div> 
-    </div> 
- 
-    <div class="chart-card"> 
-      <div class="chart-header"> 
-        <h2>Distribuição por Estado</h2> 
-        <p class="chart-description">Estados dos equipamentos</p> 
-      </div> 
-      <div class="chart-body"> 
-        <canvas #barChart></canvas> 
-      </div> 
-    </div> 
- 
-    <div class="chart-card"> 
-      <div class="chart-header"> 
-        <h2>Tendência de Alocações</h2> 
-        <p class="chart-description">Últimos 6 meses</p> 
-      </div> 
-      <div class="chart-body"> 
-        <canvas #lineChart></canvas> 
-      </div> 
-    </div> 
- 
-    <div class="chart-card"> 
-      <div class="chart-header"> 
-        <h2>Tendência de Reparações</h2> 
-        <p class="chart-description">Últimos 6 meses</p> 
-      </div> 
-      <div class="chart-body"> 
-        <canvas #lineChart2></canvas> 
-      </div> 
-    </div> 
- 
-    <div class="chart-card"> 
-      <div class="chart-header"> 
-        <h2>Tendência de Devoluções</h2> 
-        <p class="chart-description">Últimos 6 meses</p> 
-      </div> 
-      <div class="chart-body"> 
-        <canvas #lineChart3></canvas> 
-      </div> 
-    </div>
-  </div>
-
-  <!-- Recent Activities --> 
-  <div class="recent-activities-container"> 
-    <div class="section-header"> 
-      <div> 
-        <h2>Atividades Recentes</h2> 
-        <p class="section-description">Últimas ações realizadas no sistema</p> 
-      </div> 
-      <div class="section-actions">
-        <button class="clear-btn" mat-button color="warn" (click)="limparAtividades()">Limpar</button>
-        <button class="view-all-btn" mat-button color="primary" (click)="navegarPara('actividades')">Ver Tudo</button>
+    <div *ngIf="isLoading" class="alert-card info">
+      <span class="material-icons">hourglass_top</span>
+      <div>
+        <strong>A carregar dados</strong>
+        <p>Os indicadores e gráficos estão a ser atualizados.</p>
       </div>
-    </div> 
-    <div class="activities-list"> 
-      <div class="activity-item" *ngFor="let activity of recentActivities"> 
-        <div class="activity-icon" [ngClass]="getStatusClass(activity.type)"> 
-          <span class="material-icons">{{ getStatusIcon(activity.type) }}</span> 
-        </div> 
-        <div class="activity-details"> 
-          <div class="activity-header"> 
-            <h3>{{ activity.equipmentName }}</h3> 
-            <div class="activity-actions"> 
-              <span class="activity-badge" [ngClass]="getStatusBadgeClass(activity.type)"> 
-                {{ activity.status }} 
-              </span> 
-            </div> 
-          </div> 
-          <p class="activity-description"> 
-            {{ activity.status }} por <span class="activity-user">{{ activity.user }}</span> 
-          </p> 
-          <p class="activity-date"> 
-            {{ activity.date | date:'dd/MM/yyyy HH:mm' }} 
-          </p> 
-        </div> 
-      </div> 
+    </div>
+
+    <div *ngIf="loadErrors.length" class="alert-card warning">
+      <span class="material-icons">error_outline</span>
+      <div>
+        <strong>Alguns dados não foram carregados</strong>
+        <ul>
+          <li *ngFor="let err of loadErrors">{{ err }}</li>
+        </ul>
+      </div>
     </div>
   </div>
+
+  <section class="summary-grid">
+    <article class="summary-card summary-card--users" (click)="navegarPara('equipamentos')">
+      <div class="summary-card__meta">
+        <span>Total Equipamentos</span>
+        <div class="trend-chip positive">
+          <span class="material-icons">trending_up</span>
+          Base ativa
+        </div>
+      </div>
+      <h2>{{ equipmentStats.total }}</h2>
+      <p>{{ equipmentStats.available }} disponíveis no inventário.</p>
+    </article>
+
+    <article class="summary-card summary-card--revenue" (click)="navegarPara('alocacoes')">
+      <div class="summary-card__meta">
+        <span>Equipamentos Alocados</span>
+        <div class="trend-chip positive">
+          <span class="material-icons">north_east</span>
+          {{ getAllocatedPercentage() }}%
+        </div>
+      </div>
+      <h2>{{ equipmentStats.allocated }}</h2>
+      <p>{{ allocationTypes[0].count }} registos no fluxo operacional.</p>
+    </article>
+
+    <article class="summary-card summary-card--orders" (click)="navegarPara('reparacoes')">
+      <div class="summary-card__meta">
+        <span>Em Reparação</span>
+        <div class="trend-chip warning">
+          <span class="material-icons">build_circle</span>
+          {{ getRepairPercentage() }}%
+        </div>
+      </div>
+      <h2>{{ equipmentStats.inRepair }}</h2>
+      <p>{{ allocationTypes[1].count }} reparações registadas.</p>
+    </article>
+
+    <article class="summary-card summary-card--tickets" (click)="navegarPara('devolucoes')">
+      <div class="summary-card__meta">
+        <span>Devoluções</span>
+        <div class="trend-chip accent">
+          <span class="material-icons">sync_alt</span>
+          Fluxo
+        </div>
+      </div>
+      <h2>{{ allocationTypes[2].count }}</h2>
+      <p>{{ allocationTypes[3].count }} baixas identificadas.</p>
+    </article>
+  </section>
+
+  <section class="analytics-grid">
+    <article class="panel-card panel-card--primary">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Sales overview</span>
+          <h3>Tendências operacionais (3 em 1)</h3>
+        </div>
+        <div class="trend-selector">
+          <label for="trendSelect">Visualização:</label>
+          <div class="trend-select-wrap">
+            <select class="trend-select" id="trendSelect" [value]="selectedTrend" (change)="onTrendChange($event)">
+            <option value="alocacoes">Alocações por período</option>
+            <option value="reparacoes">Reparações por período</option>
+            <option value="devolucoes">Devoluções por período</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-chart panel-chart--lg">
+        <canvas #lineChart></canvas>
+      </div>
+    </article>
+
+    <article class="panel-card panel-card--side">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Top status</span>
+          <h3>Distribuição por estado</h3>
+        </div>
+        <span class="panel-link">Resumo</span>
+      </div>
+
+      <div class="status-chart-wrap">
+        <div class="panel-chart panel-chart--sm">
+          <canvas #barChart></canvas>
+        </div>
+
+        <div class="status-list">
+          <div class="status-row" *ngFor="let item of equipmentByStatus; let i = index">
+            <div class="status-row__label">
+              <span class="status-dot" [style.background]="chartColors[i]"></span>
+              <span>{{ item.status }}</span>
+            </div>
+            <div class="status-row__bar">
+              <span [style.width.%]="equipmentStats.total ? (item.count / equipmentStats.total) * 100 : 0"></span>
+            </div>
+            <strong>{{ item.count }}</strong>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="bottom-grid">
+    <article class="panel-card panel-card--activity">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Recent activities</span>
+          <h3>Atividades recentes</h3>
+        </div>
+        <button class="dot-button" mat-button color="primary" (click)="navegarPara('actividades')">Ver tudo</button>
+      </div>
+
+      <div class="activity-list" *ngIf="recentActivities.length; else emptyActivities">
+        <div class="activity-list__item" *ngFor="let activity of recentActivities | slice:0:4">
+          <div class="activity-avatar" [ngClass]="getStatusClass(activity.type)">
+            <span class="material-icons">{{ getStatusIcon(activity.type) }}</span>
+          </div>
+          <div class="activity-content">
+            <h4>{{ activity.equipmentName }}</h4>
+            <p>{{ activity.status }} por <span>{{ activity.user }}</span></p>
+          </div>
+          <div class="activity-side">
+            <span class="mini-badge" [ngClass]="getStatusBadgeClass(activity.type)">{{ activity.status }}</span>
+            <small>{{ activity.date | date:'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel-card panel-card--donut">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Task manager</span>
+          <h3>Distribuição por tipo</h3>
+        </div>
+        <button class="dot-button" mat-button color="warn" (click)="limparAtividades()">Limpar</button>
+      </div>
+
+      <div class="donut-layout">
+        <div class="donut-visual">
+          <canvas #pieChart width="200px" height="100px"></canvas>
+          <div class="donut-center">
+            <strong>{{ allocationTypes[0].count + allocationTypes[1].count + allocationTypes[2].count + allocationTypes[3].count }}</strong>
+            <span>Eventos</span>
+          </div>
+        </div>
+
+        <div class="donut-legend">
+          <div class="legend-line" *ngFor="let type of allocationTypes; let i = index">
+            <div class="legend-line__label">
+              <span class="status-dot" [style.background]="chartColors[i]"></span>
+              <span>{{ type.label }}</span>
+            </div>
+            <strong>{{ type.count }}</strong>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel-card panel-card--calendar">
+      <div class="panel-header">
+        <div>
+          <span class="panel-kicker">Agenda</span>
+          <h3>Calendário operacional</h3>
+        </div>
+        <div class="calendar-controls">
+          <button type="button" class="calendar-nav" (click)="prevCalendarMonth()" aria-label="Mês anterior">‹</button>
+          <span class="calendar-month">{{ calendarMonthLabel }}</span>
+          <button type="button" class="calendar-nav" (click)="nextCalendarMonth()" aria-label="Próximo mês">›</button>
+        </div>
+      </div>
+
+      <div class="calendar-grid">
+        <span class="calendar-weekday" *ngFor="let dayName of weekDays">{{ dayName }}</span>
+
+        <button
+          type="button"
+          class="calendar-day"
+          *ngFor="let day of calendarDays"
+          [class.outside]="!day.inCurrentMonth"
+          [class.today]="day.isToday">
+          {{ day.dayNumber }}
+        </button>
+      </div>
+
+      <div class="calendar-footer">
+        <div class="calendar-pill">
+          <span class="dot info"></span>
+          <span>Alocações: {{ allocationTypes[0].count }}</span>
+        </div>
+        <div class="calendar-pill">
+          <span class="dot warning"></span>
+          <span>Reparações: {{ allocationTypes[1].count }}</span>
+        </div>
+        <div class="calendar-pill">
+          <span class="dot success"></span>
+          <span>Devoluções: {{ allocationTypes[2].count }}</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <ng-template #emptyActivities>
+    <div class="empty-state">
+      <span class="material-icons">inventory_2</span>
+      <h3>Sem atividades recentes</h3>
+      <p>Quando houver novas ações no sistema, elas serão apresentadas aqui.</p>
+    </div>
+  </ng-template>
 </div>
