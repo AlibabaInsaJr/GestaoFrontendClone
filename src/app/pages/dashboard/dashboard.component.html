@@ -16,10 +16,10 @@
           <span class="material-icons">notifications_none</span>
         </div>
         <div class="profile-copy">
-          <small>Dashboard</small>
-          <strong>Gestão de Ativos</strong>
+          <small>{{ dashboardUserRoleLabel }}</small>
+          <strong>{{ dashboardUserName }}</strong>
         </div>
-        <div class="avatar-badge">GA</div>
+        <div class="avatar-badge">{{ dashboardUserInitials }}</div>
       </div>
     </div>
   </header>
@@ -149,27 +149,77 @@
   </section>
 
   <section class="bottom-grid">
-    <article class="panel-card panel-card--activity">
+    <article class="panel-card panel-card--activity consumiveis-card">
       <div class="panel-header">
         <div>
-          <span class="panel-kicker">Recent activities</span>
-          <h3>Atividades recentes</h3>
+          <span class="panel-kicker">Consumíveis</span>
+          <h3>Consumíveis (Impressoras)</h3>
         </div>
-        <button class="dot-button" mat-button color="primary" (click)="navegarPara('actividades')">Ver tudo</button>
       </div>
 
-      <div class="activity-list" *ngIf="recentActivities.length; else emptyActivities">
-        <div class="activity-list__item" *ngFor="let activity of recentActivities | slice:0:4">
-          <div class="activity-avatar" [ngClass]="getStatusClass(activity.type)">
-            <span class="material-icons">{{ getStatusIcon(activity.type) }}</span>
+      <div class="consumiveis-form">
+        <input type="text" placeholder="Referência da impressora" [(ngModel)]="novaImpressora.referencia" />
+        <select [(ngModel)]="novaImpressora.tipo">
+          <option value="PRETO_BRANCO">Preto e Branco</option>
+          <option value="COLORIDA">Colorida</option>
+        </select>
+        <input type="text" placeholder="Localização (ex: 3º Andar)" [(ngModel)]="novaImpressora.localizacao" />
+        <input type="text" placeholder="Endereço IP" [(ngModel)]="novaImpressora.enderecoIp" />
+        <input type="number" min="0" max="100" placeholder="Nível inicial (%)" [(ngModel)]="novaImpressora.nivelBase" />
+        <button type="button" class="btn-add-printer" (click)="adicionarImpressoraMock()">Registar</button>
+      </div>
+
+      <div class="consumiveis-grid">
+        <div class="consumiveis-lista">
+          <div
+            class="impressora-item"
+            *ngFor="let printer of impressorasConsumiveis"
+            [class.active]="printer.id === impressoraSelecionadaId"
+            (click)="selecionarImpressora(printer.id)">
+            <div class="impressora-head">
+              <strong>{{ printer.referencia }}</strong>
+              <span>{{ printer.enderecoIp }}</span>
+            </div>
+            <small>{{ printer.localizacao }} • {{ printer.tipo === 'COLORIDA' ? 'Colorida' : 'Preto e Branco' }}</small>
+
+            <div class="ink-control" *ngFor="let key of getConsumivelKeys(printer)">
+              <label>{{ getConsumivelLabel(key) }}: {{ printer.consumiveis[key] || 0 }}%</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [value]="printer.consumiveis[key] || 0"
+                (input)="atualizarNivelConsumivel(printer, key, +$any($event.target).value)" />
+              <div class="ink-bar">
+                <span [class]="getConsumivelClass(key)" [style.width.%]="printer.consumiveis[key] || 0"></span>
+              </div>
+            </div>
           </div>
-          <div class="activity-content">
-            <h4>{{ activity.equipmentName }}</h4>
-            <p>{{ activity.status }} por <span>{{ activity.user }}</span></p>
+        </div>
+
+        <div class="consumiveis-charts">
+          <div class="mini-chart-block">
+            <div class="mini-chart-block__title mini-chart-block__title--actions">
+              <span>Média por impressora</span>
+              <div class="consumiveis-actions">
+                <button type="button" class="consumiveis-btn" [disabled]="!selectedPrinter" (click)="editarImpressoraSelecionada()">Editar</button>
+                <button type="button" class="consumiveis-btn danger" [disabled]="!selectedPrinter" (click)="apagarImpressoraSelecionada()">Apagar</button>
+                <button type="button" class="consumiveis-btn success" (click)="exportarConsumiveisPdf()">Exportar PDF</button>
+              </div>
+            </div>
+            <div class="panel-chart panel-chart--mini">
+              <canvas #consumablesChart></canvas>
+            </div>
           </div>
-          <div class="activity-side">
-            <span class="mini-badge" [ngClass]="getStatusBadgeClass(activity.type)">{{ activity.status }}</span>
-            <small>{{ activity.date | date:'dd/MM/yyyy HH:mm' }}</small>
+
+          <div class="mini-chart-block" *ngIf="selectedPrinter as printerDetalhe">
+            <div class="mini-chart-block__title">
+              <span>Detalhe: {{ printerDetalhe.referencia }}</span>
+              <strong>{{ getPrinterAverage(printerDetalhe) }}%</strong>
+            </div>
+            <div class="panel-chart panel-chart--mini">
+              <canvas #consumablesDetailChart></canvas>
+            </div>
           </div>
         </div>
       </div>
@@ -226,8 +276,13 @@
           class="calendar-day"
           *ngFor="let day of calendarDays"
           [class.outside]="!day.inCurrentMonth"
-          [class.today]="day.isToday">
-          {{ day.dayNumber }}
+          [class.today]="day.isToday"
+          [class.has-reminder]="day.hasPendingRepairReminder"
+          [attr.title]="day.hasPendingRepairReminder ? 'Reparação pendente: clique para abrir detalhes' : null"
+          [attr.aria-label]="day.hasPendingRepairReminder ? ('Dia ' + day.dayNumber + ', com reparação pendente') : ('Dia ' + day.dayNumber)"
+          (click)="onCalendarDayClick(day)"> 
+          <span>{{ day.dayNumber }}</span>
+          <small *ngIf="day.hasPendingRepairReminder" class="calendar-reminder-count">{{ day.reminders.length }}</small>
         </button>
       </div>
 
@@ -238,7 +293,7 @@
         </div>
         <div class="calendar-pill">
           <span class="dot warning"></span>
-          <span>Reparações: {{ allocationTypes[1].count }}</span>
+          <span>Reparações pendentes: {{ pendingRepairReminders.length }}</span>
         </div>
         <div class="calendar-pill">
           <span class="dot success"></span>
@@ -248,11 +303,4 @@
     </article>
   </section>
 
-  <ng-template #emptyActivities>
-    <div class="empty-state">
-      <span class="material-icons">inventory_2</span>
-      <h3>Sem atividades recentes</h3>
-      <p>Quando houver novas ações no sistema, elas serão apresentadas aqui.</p>
-    </div>
-  </ng-template>
 </div>

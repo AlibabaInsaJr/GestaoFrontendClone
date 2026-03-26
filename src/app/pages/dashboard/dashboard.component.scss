@@ -108,6 +108,7 @@ $danger: #ff6b6b;
   display: flex;
   flex-direction: column;
   line-height: 1.1;
+  min-width: 0;
 
   small {
     color: $text-soft;
@@ -116,6 +117,10 @@ $danger: #ff6b6b;
   strong {
     color: $text;
     font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
   }
 }
 
@@ -475,6 +480,129 @@ $danger: #ff6b6b;
   gap: 0.9rem;
 }
 
+.consumiveis-card {
+  .panel-header {
+    margin-bottom: 0.75rem;
+  }
+}
+
+.consumiveis-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+
+  input,
+  select {
+    height: 34px;
+    border: 1px solid $border;
+    border-radius: 10px;
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
+    color: $text;
+    background: #fff;
+  }
+
+  .btn-add-printer {
+    height: 34px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, $blue, $purple);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+  }
+}
+
+.consumiveis-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 0.85rem;
+}
+
+.consumiveis-lista {
+  display: grid;
+  gap: 0.65rem;
+  max-height: 350px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.impressora-item {
+  padding: 0.75rem;
+  border: 1px solid $border;
+  border-radius: 12px;
+  background: $surface-soft;
+  cursor: pointer;
+
+  &.active {
+    border-color: rgba(79, 124, 255, 0.5);
+    box-shadow: 0 10px 20px rgba(79, 124, 255, 0.12);
+  }
+
+  small {
+    color: $text-soft;
+    display: block;
+    margin: 0.2rem 0 0.5rem;
+  }
+}
+
+.impressora-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  strong {
+    color: $text;
+    font-size: 0.86rem;
+  }
+
+  span {
+    color: $text-soft;
+    font-size: 0.74rem;
+  }
+}
+
+.ink-control {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+
+  label {
+    font-size: 0.75rem;
+    color: $text;
+    font-weight: 600;
+  }
+
+  input[type='range'] {
+    width: 100%;
+  }
+}
+
+.ink-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #e8eefb;
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .ink-black { background: #111827; }
+  .ink-cyan { background: #06b6d4; }
+  .ink-magenta { background: #ec4899; }
+  .ink-yellow { background: #f59e0b; }
+}
+
+.consumiveis-charts {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .activity-list__item {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr) auto;
@@ -647,6 +775,45 @@ $danger: #ff6b6b;
   }
 }
 
+.mini-chart-block__title--actions {
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.consumiveis-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.consumiveis-btn {
+  height: 28px;
+  border: 1px solid rgba(79, 124, 255, 0.3);
+  border-radius: 8px;
+  background: #fff;
+  color: #3650a7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0 0.55rem;
+  cursor: pointer;
+
+  &.danger {
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #b91c1c;
+  }
+
+  &.success {
+    border-color: rgba(34, 197, 94, 0.35);
+    color: #15803d;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .calendar-controls {
   display: inline-flex;
   align-items: center;
@@ -687,6 +854,7 @@ $danger: #ff6b6b;
 }
 
 .calendar-day {
+  position: relative;
   height: 34px;
   border: 1px solid $border;
   border-radius: 10px;
@@ -694,6 +862,7 @@ $danger: #ff6b6b;
   background: $surface-soft;
   font-size: 0.8rem;
   font-weight: 600;
+  cursor: default;
 
   &.outside {
     color: #b5bfd4;
@@ -705,6 +874,36 @@ $danger: #ff6b6b;
     border-color: transparent;
     background: linear-gradient(135deg, $blue, $purple);
   }
+
+  &.has-reminder {
+    cursor: pointer;
+    border-color: rgba(245, 158, 11, 0.7);
+    background: linear-gradient(180deg, rgba(255, 243, 220, 0.95), rgba(255, 232, 196, 0.95));
+    color: #8a4b00;
+    font-weight: 700;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(245, 158, 11, 0.22);
+    }
+  }
+}
+
+.calendar-reminder-count {
+  position: absolute;
+  top: -6px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  padding: 0 0.2rem;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .calendar-footer {
@@ -783,6 +982,10 @@ $danger: #ff6b6b;
   .panel-card--calendar {
     grid-column: span 6;
   }
+
+  .consumiveis-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 920px) {
@@ -813,6 +1016,11 @@ $danger: #ff6b6b;
 
   .activity-side {
     align-items: flex-start;
+  }
+
+  .consumiveis-form,
+  .consumiveis-grid {
+    grid-template-columns: 1fr;
   }
 }
 

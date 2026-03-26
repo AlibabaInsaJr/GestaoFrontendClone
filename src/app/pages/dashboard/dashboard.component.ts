@@ -2,6 +2,7 @@ import {
   Component, 
   ElementRef, 
   OnInit, 
+  OnDestroy,
   ViewChild, 
   AfterViewInit 
 } from '@angular/core';
@@ -11,7 +12,10 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { Chart, registerables } from 'chart.js';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import { EquipamentoService } from '../../services/equipamento.service';
 import { AlocacaoService } from '../../services/alocacoes.service';
@@ -20,8 +24,8 @@ import { DevolucoesService } from '../../services/devolucoes.service';
 import { BaixasService } from '../../services/baixas.service';
 import { AuditService } from '../../services/audit.service';
 import { LoadingService } from '../../services/loading.service';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Subject, forkJoin, interval, of } from 'rxjs';
+import { catchError, startWith, switchMap, takeUntil } from 'rxjs/operators';
 
 Chart.register(...registerables);
 
@@ -34,14 +38,39 @@ interface Activity {
   status: string;
 }
 
+
+interface PrinterConsumables {
+  black: number;
+  cyan?: number;
+  magenta?: number;
+  yellow?: number;
+}
+
+interface PrinterSupplyItem {
+  id: number;
+  referencia: string;
+  tipo: 'COLORIDA' | 'PRETO_BRANCO';
+  localizacao: string;
+  enderecoIp: string;
+  consumiveis: PrinterConsumables;
+}
+
+interface RepairReminder {
+  repairId: number;
+  expectedDate: Date;
+  empresaId?: number;
+}
+
 interface CalendarDay {
   date: Date;
   dayNumber: number;
   inCurrentMonth: boolean;
   isToday: boolean;
+  hasPendingRepairReminder: boolean;
+  reminders: RepairReminder[];
 }
 
-import { AuthService } from '../../services/auth.service';
+import { AuthService, User } from '../../services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -52,26 +81,26 @@ import { AuthService } from '../../services/auth.service';
     MatIconModule,
     MatMenuModule,
     MatButtonModule,
-    MatDividerModule
+    MatDividerModule,
+    FormsModule
   ],
   providers: [DatePipe],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   isAdmin = false;
+  dashboardUserName = 'Utilizador';
+  dashboardUserRoleLabel = 'Gestão de Ativos';
+  dashboardUserInitials = 'GA';
 
-  verDetalheS(_t91: Activity) {
-    throw new Error('Method not implemented.');
-  }
-  verDetalhES(_t91: Activity) {
-    throw new Error('Method not implemented.');
-  }
   @ViewChild('pieChart') pieChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('barChart') barChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lineChart') lineChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lineChart2') lineChart2Ref!: ElementRef<HTMLCanvasElement>;
   @ViewChild('lineChart3') lineChart3Ref!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('consumablesChart') consumablesChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('consumablesDetailChart') consumablesDetailChartRef!: ElementRef<HTMLCanvasElement>;
 
   equipmentStats = {
     total: 0,
@@ -88,6 +117,42 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   selectedTrend: 'alocacoes' | 'reparacoes' | 'devolucoes' = 'alocacoes';
 
   recentActivities: Activity[] = [];
+  impressorasConsumiveis: PrinterSupplyItem[] = [
+    {
+      id: 1,
+      referencia: 'HP-LJ-4001',
+      tipo: 'PRETO_BRANCO',
+      localizacao: '3º Andar',
+      enderecoIp: '10.10.3.21',
+      consumiveis: { black: 64 }
+    },
+    {
+      id: 2,
+      referencia: 'Canon-CX-775',
+      tipo: 'COLORIDA',
+      localizacao: '2º Andar',
+      enderecoIp: '10.10.2.47',
+      consumiveis: { black: 71, cyan: 52, magenta: 34, yellow: 60 }
+    },
+    {
+      id: 3,
+      referencia: 'Epson-MC-992',
+      tipo: 'COLORIDA',
+      localizacao: 'R/C',
+      enderecoIp: '10.10.0.15',
+      consumiveis: { black: 28, cyan: 20, magenta: 18, yellow: 25 }
+    }
+  ];
+
+  novaImpressora: Omit<PrinterSupplyItem, 'id' | 'consumiveis'> & { nivelBase: number } = {
+    referencia: '',
+    tipo: 'PRETO_BRANCO',
+    localizacao: '',
+    enderecoIp: '',
+    nivelBase: 100
+  };
+
+  impressoraSelecionadaId = 1;
   allocationTypes = [
     { label: 'Alocações', count: 0 },
     { label: 'Reparações', count: 0 },
@@ -107,6 +172,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   calendarDays: CalendarDay[] = [];
   calendarMonthLabel = '';
   private calendarCursor = new Date();
+  pendingRepairReminders: RepairReminder[] = [];
 
   private readonly estadosOcultos = new Set<string>([
     'BAIXADO',
@@ -141,12 +207,59 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private charts: { [key: string]: Chart } = {};
   loadErrors: string[] = [];
 
+  private readonly destroy$ = new Subject<void>();
+
   ngOnInit(): void {
     this.isAdmin = this.authService.isAdmin();
+    this.sincronizarUtilizadorLogado();
     this.generateCalendar();
     this.carregarEstatisticas();
     this.carregarAtividadesRecentes();
+    this.iniciarSincronizacaoLembretesReparacao();
+    this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
     console.log('Dashboard inicializado');
+  }
+
+  private sincronizarUtilizadorLogado(): void {
+    this.authService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((user) => this.aplicarDadosUtilizador(user));
+
+    this.aplicarDadosUtilizador(this.authService.getCurrentUser());
+  }
+
+  private aplicarDadosUtilizador(user: User | null): void {
+    const rawName = user?.username?.trim() || user?.email?.trim() || 'Utilizador';
+    const safeName = rawName.replace(/[_\.]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+    this.dashboardUserName = safeName || 'Utilizador';
+    this.dashboardUserRoleLabel = this.isAdmin ? 'Administrador' : 'Utilizador';
+
+    const words = this.dashboardUserName.split(' ').filter(Boolean);
+    if (words.length >= 2) {
+      this.dashboardUserInitials = `${words[0][0]}${words[1][0]}`.toUpperCase();
+    } else {
+      this.dashboardUserInitials = this.dashboardUserName.slice(0, 2).toUpperCase() || 'US';
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.destroyExistingCharts();
+  }
+
+  private iniciarSincronizacaoLembretesReparacao(): void {
+    interval(15000)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.reparacaoService.listar().pipe(catchError(() => of([])))),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((reparacoes: any[]) => {
+        this.pendingRepairReminders = this.mapPendingRepairReminders(reparacoes || []);
+        this.generateCalendar();
+      });
   }
 
   navegarParaAdmin(): void {
@@ -220,6 +333,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
          this.allocationTrend = this.calcularTrendMensalPorCampo(alocacoes || [], 'dataAlocacao');
          this.repairTrend = this.calcularTrendMensalPorCampo(reparacoes || [], 'dataEnvioReparacao');
          this.returnTrend = this.calcularTrendMensalPorCampo(devolucoes || [], 'dataDevolucao');
+
+         this.pendingRepairReminders = this.mapPendingRepairReminders(reparacoes || []);
+         this.generateCalendar();
+
          this.isLoading = false;
          this.updateCharts();
       },
@@ -301,6 +418,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.chartsInitialized = true;
       this.initCharts();
+      this.refreshConsumiveisCharts();
     }, 200);
   }
 
@@ -572,15 +690,368 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i);
       const today = new Date();
       const isToday = date.toDateString() === today.toDateString();
+      const reminders = this.getRemindersForDate(date);
 
       this.calendarDays.push({
         date,
         dayNumber: date.getDate(),
         inCurrentMonth: date.getMonth() === month,
-        isToday
+        isToday,
+        hasPendingRepairReminder: reminders.length > 0,
+        reminders
       });
     }
   }
+
+  private mapPendingRepairReminders(reparacoes: any[]): RepairReminder[] {
+    return (reparacoes || [])
+      .filter((r: any) => !r?.dataDevolucao)
+      .map((r: any) => {
+        const rawDate = r?.dataPrevistaDevolucao || r?.dataEnvioReparacao;
+        const parsed = rawDate ? new Date(rawDate) : null;
+        if (!parsed || isNaN(parsed.getTime()) || !r?.id) {
+          return null;
+        }
+        return {
+          repairId: Number(r.id),
+          expectedDate: parsed,
+          empresaId: r?.empresaId
+        } as RepairReminder;
+      })
+      .filter((item: RepairReminder | null): item is RepairReminder => item !== null);
+  }
+
+  private getRemindersForDate(date: Date): RepairReminder[] {
+    return this.pendingRepairReminders.filter((reminder) =>
+      reminder.expectedDate.getFullYear() === date.getFullYear() &&
+      reminder.expectedDate.getMonth() === date.getMonth() &&
+      reminder.expectedDate.getDate() === date.getDate()
+    );
+  }
+
+  onCalendarDayClick(day: CalendarDay): void {
+    if (!day.hasPendingRepairReminder || !day.reminders.length) {
+      return;
+    }
+
+    const reminder = day.reminders[0];
+    this.router.navigate(['/reparacoes', reminder.repairId]);
+  }
+
+  adicionarImpressoraMock(): void {
+    const referencia = this.novaImpressora.referencia.trim();
+    const localizacao = this.novaImpressora.localizacao.trim();
+    const enderecoIp = this.novaImpressora.enderecoIp.trim();
+
+    if (!referencia || !localizacao || !enderecoIp) {
+      return;
+    }
+
+    const baseLevel = this.clampPercent(this.novaImpressora.nivelBase);
+    const consumiveis: PrinterConsumables = this.novaImpressora.tipo === 'COLORIDA'
+      ? { black: baseLevel, cyan: baseLevel, magenta: baseLevel, yellow: baseLevel }
+      : { black: baseLevel };
+
+    const nextId = this.impressorasConsumiveis.length
+      ? Math.max(...this.impressorasConsumiveis.map((p) => p.id)) + 1
+      : 1;
+
+    this.impressorasConsumiveis = [
+      ...this.impressorasConsumiveis,
+      {
+        id: nextId,
+        referencia,
+        tipo: this.novaImpressora.tipo,
+        localizacao,
+        enderecoIp,
+        consumiveis
+      }
+    ];
+
+    this.impressoraSelecionadaId = nextId;
+
+    this.novaImpressora = {
+      referencia: '',
+      tipo: 'PRETO_BRANCO',
+      localizacao: '',
+      enderecoIp: '',
+      nivelBase: 100
+    };
+
+    this.refreshConsumiveisCharts();
+  }
+
+  atualizarNivelConsumivel(printer: PrinterSupplyItem, key: keyof PrinterConsumables, value: number): void {
+    printer.consumiveis[key] = this.clampPercent(value);
+    this.refreshConsumiveisCharts();
+  }
+
+  selecionarImpressora(printerId: number): void {
+    this.impressoraSelecionadaId = printerId;
+    this.refreshConsumiveisCharts();
+  }
+
+  editarImpressoraSelecionada(): void {
+    const selected = this.selectedPrinter;
+    if (!selected) return;
+
+    const referencia = prompt('Editar referência da impressora:', selected.referencia);
+    if (referencia === null) return;
+
+    const enderecoIp = prompt('Editar endereço IP:', selected.enderecoIp);
+    if (enderecoIp === null) return;
+
+    const localizacao = prompt('Editar localização:', selected.localizacao);
+    if (localizacao === null) return;
+
+    selected.referencia = referencia.trim() || selected.referencia;
+    selected.enderecoIp = enderecoIp.trim() || selected.enderecoIp;
+    selected.localizacao = localizacao.trim() || selected.localizacao;
+
+    this.refreshConsumiveisCharts();
+  }
+
+  apagarImpressoraSelecionada(): void {
+    const selected = this.selectedPrinter;
+    if (!selected) return;
+
+    const confirmar = confirm(`Deseja apagar a impressora ${selected.referencia}?`);
+    if (!confirmar) return;
+
+    this.impressorasConsumiveis = this.impressorasConsumiveis.filter((p) => p.id !== selected.id);
+    this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
+    this.refreshConsumiveisCharts();
+  }
+
+  async exportarConsumiveisPdf(): Promise<void> {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const firstPageTemplate = await this.loadAssetDataUrl('assets/Relatorio.png');
+    const nextPageTemplate = await this.loadAssetDataUrl('assets/Second page.png');
+
+    this.renderPageTemplate(doc, firstPageTemplate || nextPageTemplate, pageWidth, pageHeight);
+
+    const contentTop = 100;
+    const contentBottom = pageHeight - 20;
+
+    autoTable(doc, {
+      startY: contentTop,
+      head: [['Referência', 'Tipo', 'Localização', 'IP', 'Média (%)']],
+      body: this.impressorasConsumiveis.map((p) => [
+        p.referencia,
+        p.tipo === 'COLORIDA' ? 'Colorida' : 'Preto e Branco',
+        p.localizacao,
+        p.enderecoIp,
+        `${this.getPrinterAverage(p)}%`
+      ]),
+      margin: { left: 14, right: 14 },
+      styles: { fontSize: 9 },
+      willDrawPage: (data) => {
+        if (data.pageNumber === 1) {
+          this.renderPageTemplate(doc, firstPageTemplate || nextPageTemplate, pageWidth, pageHeight);
+        } else {
+          this.renderPageTemplate(doc, nextPageTemplate, pageWidth, pageHeight);
+        }
+      }
+    });
+
+    let yPos = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 8 : contentTop + 15;
+
+    this.impressorasConsumiveis.forEach((printer, index) => {
+      const blocoAltura = 36 + this.getConsumivelKeys(printer).length * 8;
+      if (yPos + blocoAltura > contentBottom) {
+        doc.addPage();
+        this.renderPageTemplate(doc, nextPageTemplate, pageWidth, pageHeight);
+        yPos = 16;
+      }
+
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${index + 1}. ${printer.referencia} (${printer.enderecoIp})`, 14, yPos);
+      yPos += 4;
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Localização: ${printer.localizacao}`, 16, yPos + 3);
+      yPos += 6;
+
+      const keys = this.getConsumivelKeys(printer);
+      keys.forEach((key) => {
+        const value = printer.consumiveis[key] || 0;
+        const label = this.getConsumivelLabel(key);
+
+        doc.setFontSize(9);
+        doc.setTextColor(51, 65, 85);
+        doc.text(`${label}: ${value}%`, 16, yPos + 4);
+        doc.setDrawColor(220);
+        doc.rect(48, yPos + 1.2, 80, 4.5);
+
+        const [r, g, b] = this.getConsumivelRgb(key);
+        doc.setFillColor(r, g, b);
+        doc.rect(48, yPos + 1.2, 0.8 * value, 4.5, 'F');
+
+        yPos += 8;
+      });
+
+      yPos += 3;
+    });
+
+    doc.save(`consumiveis-impressoras-${new Date().toISOString().slice(0, 10)}.pdf`);
+  }
+
+  private renderPageTemplate(doc: jsPDF, templateDataUrl: string | null, pageWidth: number, pageHeight: number): void {
+    if (!templateDataUrl) {
+      return;
+    }
+
+    doc.addImage(templateDataUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+  }
+
+  private async loadAssetDataUrl(assetPath: string): Promise<string | null> {
+    try {
+      const response = await fetch(assetPath);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  private getConsumivelRgb(key: keyof PrinterConsumables): [number, number, number] {
+    switch (key) {
+      case 'black':
+        return [17, 24, 39];
+      case 'cyan':
+        return [6, 182, 212];
+      case 'magenta':
+        return [236, 72, 153];
+      case 'yellow':
+        return [245, 158, 11];
+      default:
+        return [79, 124, 255];
+    }
+  }
+
+
+  getConsumivelKeys(printer: PrinterSupplyItem): (keyof PrinterConsumables)[] {
+    const keys: (keyof PrinterConsumables)[] = ['black'];
+    if (printer.tipo === 'COLORIDA') {
+      keys.push('cyan', 'magenta', 'yellow');
+    }
+    return keys;
+  }
+
+  getConsumivelLabel(key: keyof PrinterConsumables): string {
+    const labels: Record<keyof PrinterConsumables, string> = {
+      black: 'Preto',
+      cyan: 'Cyan',
+      magenta: 'Magenta',
+      yellow: 'Amarelo'
+    };
+    return labels[key];
+  }
+
+  getConsumivelClass(key: keyof PrinterConsumables): string {
+    return `ink-${key}`;
+  }
+
+  getPrinterAverage(printer: PrinterSupplyItem): number {
+    const values = this.getConsumivelKeys(printer)
+      .map((key) => printer.consumiveis[key] ?? 0);
+
+    if (!values.length) {
+      return 0;
+    }
+
+    const total = values.reduce((sum, curr) => sum + curr, 0);
+    return Math.round(total / values.length);
+  }
+
+  get selectedPrinter(): PrinterSupplyItem | null {
+    return this.impressorasConsumiveis.find((p) => p.id === this.impressoraSelecionadaId) || null;
+  }
+
+  private clampPercent(value: number): number {
+    if (Number.isNaN(Number(value))) {
+      return 0;
+    }
+    return Math.min(100, Math.max(0, Math.round(Number(value))));
+  }
+
+  private refreshConsumiveisCharts(): void {
+    if (!this.chartsInitialized) {
+      return;
+    }
+
+    this.renderConsumiveisResumoChart();
+    this.renderConsumiveisDetalheChart();
+  }
+
+  private renderConsumiveisResumoChart(): void {
+    const ctx = this.consumablesChartRef?.nativeElement?.getContext('2d');
+    if (!ctx) return;
+
+    this.charts['consumablesSummary']?.destroy();
+
+    this.charts['consumablesSummary'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: this.impressorasConsumiveis.map((p) => p.referencia),
+        datasets: [{
+          label: 'Média de tinta (%)',
+          data: this.impressorasConsumiveis.map((p) => this.getPrinterAverage(p)),
+          borderRadius: 10,
+          backgroundColor: 'rgba(79, 124, 255, 0.75)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { min: 0, max: 100, ticks: { stepSize: 20 } },
+          x: { ticks: { color: '#667085', font: { size: 10 } } }
+        }
+      }
+    });
+  }
+
+  private renderConsumiveisDetalheChart(): void {
+    const selected = this.selectedPrinter;
+    const ctx = this.consumablesDetailChartRef?.nativeElement?.getContext('2d');
+    if (!ctx || !selected) return;
+
+    this.charts['consumablesDetail']?.destroy();
+
+    const keys = this.getConsumivelKeys(selected);
+
+    this.charts['consumablesDetail'] = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: keys.map((k) => this.getConsumivelLabel(k)),
+        datasets: [{
+          data: keys.map((k) => selected.consumiveis[k] || 0),
+          backgroundColor: ['#111827', '#06B6D4', '#EC4899', '#FACC15'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } },
+        cutout: '62%'
+      }
+    });
+  }
+
 
   /**
    * Formata a data da atividade para exibição
