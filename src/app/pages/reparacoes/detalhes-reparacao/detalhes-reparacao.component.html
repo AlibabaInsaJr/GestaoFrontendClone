@@ -18,6 +18,17 @@
         <p><span>Data Envio:</span> {{ reparacao.dataEnvioReparacao | date: 'dd/MM/yyyy' }}</p>
         <p><span>Data Prevista Devolução:</span> {{ reparacao.dataPrevistaDevolucao | date: 'dd/MM/yyyy' }}</p>
         <p><span>Data Devolução:</span> {{ reparacao.dataDevolucao | date: 'dd/MM/yyyy' }}</p>
+        <p>
+          <span>Guia de Reparação:</span>
+          <a *ngIf="reparacao?.pathGuiaReparacao" [href]="toFileUrl(reparacao.pathGuiaReparacao)" target="_blank">Abrir Guia</a>
+          <span *ngIf="!reparacao?.pathGuiaReparacao">Não disponível</span>
+        </p>
+        <div class="anotacoes-prazo" *ngIf="anotacoesPrazo.length > 0">
+          <h3>Histórico de Extensão de Prazo</h3>
+          <ul>
+            <li *ngFor="let anotacao of anotacoesPrazo">{{ anotacao }}</li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -63,6 +74,23 @@
             title="Marcar como devolvido">
             <i class="fas fa-check"></i> Devolvido
           </button>
+          <button
+            *ngIf="!reparacao?.dataDevolucao"
+            class="btn-estender"
+            type="button"
+            (click)="toggleEstenderPrazo()"
+            title="Estender data prevista">
+            <i class="fas fa-calendar-plus"></i> Estender
+          </button>
+        </div>
+      </div>
+
+      <div class="prazo-editor-card" *ngIf="showExtendDatePicker && !reparacao?.dataDevolucao">
+        <label>Nova data prevista:</label>
+        <input type="date" [(ngModel)]="novaDataPrevista" />
+        <div class="prazo-editor-actions">
+          <button type="button" class="btn-confirmar" (click)="confirmarNovaDataPrevista()">Confirmar</button>
+          <button type="button" class="btn-cancelar" (click)="cancelarEstenderPrazo()">Cancelar</button>
         </div>
       </div>
 
@@ -86,6 +114,85 @@
 </div>
 
 <style>
+
+  .btn-estender,
+  .btn-confirmar,
+  .btn-cancelar {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all .2s ease;
+  }
+  .btn-estender {
+    background: #2563eb;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-estender:hover {
+    background: #1d4ed8;
+  }
+  .prazo-editor-card {
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid #dbeafe;
+    background: #f8fbff;
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .prazo-editor-card label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .prazo-editor-card input[type='date'] {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 9px;
+    color: #0f172a;
+    background: #fff;
+  }
+  .prazo-editor-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-confirmar {
+    background: #16a34a;
+    color: #fff;
+  }
+  .btn-confirmar:hover {
+    background: #15803d;
+  }
+  .btn-cancelar {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+  .btn-cancelar:hover {
+    background: #cbd5e1;
+  }
+  .anotacoes-prazo {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+  .anotacoes-prazo h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+  }
+  .anotacoes-prazo ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
   .cronometro {
     display: flex;
     align-items: center;

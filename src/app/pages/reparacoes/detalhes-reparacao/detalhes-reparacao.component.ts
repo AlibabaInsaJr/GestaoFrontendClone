@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -8,11 +9,12 @@ import { EquipamentoService } from '../../../services/equipamento.service';
 import { EmpresaService } from '../../../services/empresa.service';  // Adicionando o serviço de empresas
 import { Location } from '@angular/common';
 import { UtilizadorService } from '../../../services/utilizador.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-detalhes-reparacao',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './detalhes-reparacao.component.html',
   styleUrls: ['./detalhes-reparacao.component.scss'],
   encapsulation: ViewEncapsulation.None
@@ -32,6 +34,10 @@ export class DetalhesReparacaoComponent implements OnInit {
   countdownText: string = '';
   countdownPassed: boolean = false;
   private countdownInterval: any;
+
+  showExtendDatePicker: boolean = false;
+  novaDataPrevista: string = '';
+  anotacoesPrazo: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -68,6 +74,7 @@ export class DetalhesReparacaoComponent implements OnInit {
     this.reparacaoService.buscarPorId(this.reparacaoId).subscribe({
       next: dados => {
         this.reparacao = dados;
+        this.carregarAnotacoesPrazo();
         // Iniciar cronómetro se houver Resumo (avaria) e Data Prevista Devolução e não estiver devolvido
         if (this.reparacao?.avaria && this.reparacao?.dataPrevistaDevolucao && !this.reparacao?.dataDevolucao) {
           this.iniciarCountdown(this.reparacao.dataPrevistaDevolucao);
@@ -224,7 +231,8 @@ export class DetalhesReparacaoComponent implements OnInit {
       avaria: this.reparacao.avaria,
       dataEnvioReparacao: this.reparacao.dataEnvioReparacao,
       dataPrevistaDevolucao: this.reparacao.dataPrevistaDevolucao,
-      dataDevolucao: dataDevolucao
+      dataDevolucao: dataDevolucao,
+      pathGuiaReparacao: this.reparacao.pathGuiaReparacao || null
     };
     
     this.reparacaoService.atualizar(this.reparacaoId, reparacaoAtualizada).subscribe({
@@ -258,6 +266,102 @@ export class DetalhesReparacaoComponent implements OnInit {
       next: (dados: any[]) => this.tecnicos = dados,
       error: (err) => console.error('Erro ao carregar técnicos:', err)
     });
+  }
+
+
+
+  toggleEstenderPrazo(): void {
+    this.showExtendDatePicker = !this.showExtendDatePicker;
+    if (this.showExtendDatePicker) {
+      this.novaDataPrevista = this.toDateInput(this.reparacao?.dataPrevistaDevolucao);
+    }
+  }
+
+  confirmarNovaDataPrevista(): void {
+    if (!this.novaDataPrevista) {
+      alert('Selecione a nova data prevista de devolução.');
+      return;
+    }
+
+    const dataAnterior = this.reparacao?.dataPrevistaDevolucao;
+    const dataNova = this.novaDataPrevista;
+
+    const reparacaoAtualizada = {
+      id: this.reparacao.id,
+      empresaId: this.reparacao.empresaId,
+      tecnicoGSIId: this.reparacao.tecnicoGSIId,
+      avaria: this.reparacao.avaria,
+      dataEnvioReparacao: this.reparacao.dataEnvioReparacao,
+      dataPrevistaDevolucao: dataNova,
+      dataDevolucao: this.reparacao.dataDevolucao,
+      pathGuiaReparacao: this.reparacao.pathGuiaReparacao || null
+    };
+
+    this.reparacaoService.atualizar(this.reparacaoId, reparacaoAtualizada).subscribe({
+      next: (reparacao) => {
+        this.reparacao = reparacao;
+        this.showExtendDatePicker = false;
+
+        const textoAnotacao = `Prazo de devolução alterado de ${this.formatDatePTValue(dataAnterior)} para ${this.formatDatePTValue(dataNova)} em ${new Date().toLocaleString('pt-PT')}.`;
+        this.anotacoesPrazo.unshift(textoAnotacao);
+        this.guardarAnotacoesPrazo();
+
+        if (!this.reparacao?.dataDevolucao && this.reparacao?.dataPrevistaDevolucao) {
+          this.iniciarCountdown(this.reparacao.dataPrevistaDevolucao);
+        }
+      },
+      error: (err) => {
+        console.error('Erro ao estender data prevista de devolução:', err);
+        alert('Não foi possível atualizar a data prevista de devolução.');
+      }
+    });
+  }
+
+  cancelarEstenderPrazo(): void {
+    this.showExtendDatePicker = false;
+  }
+
+  private getAnotacoesPrazoStorageKey(): string {
+    return `reparacao_${this.reparacaoId}_anotacoes_prazo`;
+  }
+
+  private carregarAnotacoesPrazo(): void {
+    try {
+      const raw = localStorage.getItem(this.getAnotacoesPrazoStorageKey());
+      this.anotacoesPrazo = raw ? JSON.parse(raw) : [];
+    } catch {
+      this.anotacoesPrazo = [];
+    }
+  }
+
+  private guardarAnotacoesPrazo(): void {
+    try {
+      localStorage.setItem(this.getAnotacoesPrazoStorageKey(), JSON.stringify(this.anotacoesPrazo));
+    } catch {}
+  }
+
+  private toDateInput(value: string | Date | null | undefined): string {
+    if (!value) return '';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  private formatDatePTValue(value: string | Date | null | undefined): string {
+    if (!value) return '---';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleDateString('pt-PT');
+  }
+
+  toFileUrl(path: string | null | undefined): string {
+    if (!path) return '';
+    if (/^https?:\/\//i.test(path)) return path;
+    const p = path.startsWith('/') ? path : `/${path}`;
+    return `${environment.apiUrl}${p}`;
   }
 
   getTecnicoNome(id: number | string | null | undefined): string {

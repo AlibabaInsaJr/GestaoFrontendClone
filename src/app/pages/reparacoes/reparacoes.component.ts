@@ -10,6 +10,9 @@ import { ItemsReparacaoService } from '../../services/item-reparacao.service';
 import { EquipamentoService } from '../../services/equipamento.service';
 import { MarcaService } from '../../services/marca.service';
 import { ModeloService } from '../../services/modelo.service';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { FileUploadService, FileUploadResponse } from '../../services/file-upload.service';
 
 @Component({
   standalone: true,
@@ -31,7 +34,7 @@ export class ReparacoesComponent implements OnInit {
   selectedEquipamentos: string[] = [];
   dropdownAberto = false;
   dropdownEquipamentoAberto = false;
-
+  isUploadingGuia = false;
 
   filtroEmpresa: number | null = null;
   filtroTecnico: number | null = null;
@@ -50,7 +53,8 @@ export class ReparacoesComponent implements OnInit {
     private itemsReparacaoService: ItemsReparacaoService,
     private equipamentoService: EquipamentoService,
     private marcaService: MarcaService,
-    private modeloService: ModeloService
+    private modeloService: ModeloService,
+    private fileUploadService: FileUploadService
   ) {
     this.form = this.fb.group({
       empresaId: [null, Validators.required],
@@ -60,7 +64,8 @@ export class ReparacoesComponent implements OnInit {
       dataPrevistaDevolucao: [''],
       dataDevolucao: [''],
       marcaId: [null, Validators.required],
-      equipamentoId: [{value: null, disabled: true}, Validators.required]
+      equipamentoId: [{ value: null, disabled: true }, Validators.required],
+      pathGuiaReparacao: ['']
     });
 
     // Observar mudanças na marca para filtrar equipamentos
@@ -255,6 +260,7 @@ export class ReparacoesComponent implements OnInit {
     if (novo) {
       this.reparacaoSelecionadaId = null;
       this.form.reset();
+      this.form.patchValue({ pathGuiaReparacao: '' });
     } else if (reparacao) {
       this.reparacaoSelecionadaId = reparacao.id;
       this.form.patchValue({
@@ -265,7 +271,8 @@ export class ReparacoesComponent implements OnInit {
         dataPrevistaDevolucao: reparacao.dataPrevistaDevolucao,
         dataDevolucao: reparacao.dataDevolucao,
         marcaId: null,
-        equipamentoId: null
+        equipamentoId: null,
+        pathGuiaReparacao: reparacao.pathGuiaReparacao || ''
       });
 
       this.itemsReparacaoService.listarPorReparacao(reparacao.id).subscribe({
@@ -303,7 +310,7 @@ export class ReparacoesComponent implements OnInit {
   salvar() {
     if (this.form.invalid) return;
 
-    const dados = this.form.value;
+    const dados = this.form.getRawValue();
 
     if (this.editando && this.reparacaoSelecionadaId !== null) {
       this.reparacaoService.atualizar(this.reparacaoSelecionadaId, dados).subscribe({
@@ -352,6 +359,7 @@ export class ReparacoesComponent implements OnInit {
     this.selectedEquipamentos = [];
     this.dropdownAberto = false;
     this.dropdownEquipamentoAberto = false;
+    this.isUploadingGuia = false;
   }
 
 
@@ -478,5 +486,300 @@ export class ReparacoesComponent implements OnInit {
         this.dropdownEquipamentoAberto = false;
       }
     }
+  }
+
+  // ===== Helpers PDF Guia Reparação =====
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  private async ensureCenturyGothic(doc: jsPDF): Promise<string> {
+    try {
+      const fontResp = await fetch('assets/CenturyGothic.ttf');
+      if (fontResp.ok) {
+        const buf = await fontResp.arrayBuffer();
+        const b64 = this.arrayBufferToBase64(buf);
+        doc.addFileToVFS('CenturyGothic.ttf', b64);
+        doc.addFont('CenturyGothic.ttf', 'CenturyGothic', 'normal');
+        doc.setFont('CenturyGothic', 'normal');
+        doc.setFontSize(12);
+        return 'CenturyGothic';
+      }
+    } catch {}
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    return 'helvetica';
+  }
+
+  private formatarData(value: any): string {
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value ? String(value) : '';
+      return d.toLocaleDateString('pt-PT');
+    } catch {
+      return value ? String(value) : '';
+    }
+  }
+
+  private drawBoldLabelValue(doc: jsPDF, fontFamily: string, label: string, value: string, x: number, y: number) {
+    const labelText = `${label}:`;
+    doc.setFont(fontFamily, 'bold');
+    doc.text(labelText, x, y);
+    const labelWidth = doc.getTextWidth(labelText);
+    doc.setFont(fontFamily, 'normal');
+    doc.text(`${value}`, x + labelWidth + 2, y);
+  }
+
+  private async loadAndCompressImage(path: string, maxWidthPx: number, quality: number): Promise<string | null> {
+    try {
+      const response = await fetch(path);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const img = await this.loadHtmlImage(objectUrl);
+      URL.revokeObjectURL(objectUrl);
+      if (!img) return null;
+
+      const scale = Math.min(1, maxWidthPx / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', quality);
+    } catch {
+      return null;
+    }
+  }
+
+  private loadHtmlImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Falha ao carregar imagem'));
+      image.src = src;
+    });
+  }
+
+  async gerarGuiaReparacao(): Promise<void> {
+    const equipamentoId = this.form.get('equipamentoId')?.value;
+    const empresaId = this.form.get('empresaId')?.value;
+    const tecnicoId = this.form.get('tecnicoGSIId')?.value;
+    const avaria = (this.form.get('avaria')?.value || '').trim();
+    const dataEnvio = this.form.get('dataEnvioReparacao')?.value;
+    const dataPrevista = this.form.get('dataPrevistaDevolucao')?.value;
+
+    if (!equipamentoId || !empresaId || !tecnicoId || !avaria || !dataEnvio) {
+      alert('Preencha Empresa, Técnico, Equipamento, Data de Envio e Avaria para gerar a guia.');
+      return;
+    }
+
+    const equipamento = this.equipamentosFiltrados.find(e => e.id === equipamentoId)
+      || this.equipamentosDisponiveis.find(e => e.id === equipamentoId);
+    const tecnicoNome = this.getTecnicoNome(tecnicoId);
+    const empresaNome = this.getEmpresaNome(empresaId);
+    const modeloNome = equipamento ? this.getModeloNome(equipamento.modeloId) : '---';
+    const marcaNome = equipamento?.modeloId ? this.getMarcaNomePorModeloId(equipamento.modeloId) : '---';
+
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const fontFamily = await this.ensureCenturyGothic(doc);
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      const [firstBg, secondBg] = await Promise.all([
+        this.loadAndCompressImage('assets/Guia de Reparacao GSI.png', 1600, 0.6),
+        this.loadAndCompressImage('assets/Second page.png', 1600, 0.6)
+      ]);
+
+      const drawBgPageSpecific = (d: jsPDF, pageNumber: number) => {
+        const img = pageNumber === 1 ? (firstBg || secondBg) : (secondBg || firstBg);
+        if (img) {
+          const alias = pageNumber === 1 ? 'rep-bg1' : 'rep-bg2';
+          d.addImage(img, 'JPEG', 0, 0, pageW, pageH, alias, 'FAST');
+        }
+      };
+
+      drawBgPageSpecific(doc, 1);
+
+      const headerH = 68;
+      const footerH = 22;
+      const contentTopY = headerH + 4;
+      const contentBottomY = pageH - footerH - 6;
+
+      doc.setFont(fontFamily, 'bold');
+      doc.setFontSize(12);
+      doc.text('Guia de Reparação', pageW / 2, contentTopY, { align: 'center' });
+      doc.setFont(fontFamily, 'normal');
+
+      let y = contentTopY + 8;
+      doc.setFont(fontFamily, 'bold');
+      doc.text('1. Dados da reparação', 15, y);
+      doc.setFont(fontFamily, 'normal');
+      y += 8;
+      this.drawBoldLabelValue(doc, fontFamily, 'Empresa', empresaNome, 15, y); y += 8;
+      this.drawBoldLabelValue(doc, fontFamily, 'Técnico GSI', tecnicoNome, 15, y); y += 8;
+      this.drawBoldLabelValue(doc, fontFamily, 'Data Envio Reparação', this.formatarData(dataEnvio), 15, y); y += 8;
+      this.drawBoldLabelValue(doc, fontFamily, 'Data Prevista Devolução', dataPrevista ? this.formatarData(dataPrevista) : '—', 15, y); y += 12;
+
+      const rows = [[
+        equipamento?.numeroSerie || '—',
+        marcaNome || '—',
+        modeloNome || '—',
+        avaria || '—'
+      ]];
+
+      autoTable(doc, {
+        head: [[ 'Nº de Série', 'Marca', 'Modelo', 'Resumo da Avaria' ]],
+        body: rows,
+        startY: y + 6,
+        theme: 'grid',
+        styles: { fontSize: 12, font: fontFamily, cellPadding: 3 },
+        headStyles: { fillColor: [241, 245, 249], textColor: 30, lineColor: [203, 213, 225], lineWidth: 0.3 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        bodyStyles: { lineColor: [203, 213, 225], lineWidth: 0.2 },
+        margin: { left: 15, right: 15, bottom: pageH - contentBottomY },
+        willDrawPage: (data: any) => {
+          if (data.pageNumber !== 1) {
+            drawBgPageSpecific(doc, data.pageNumber);
+          }
+        }
+      });
+
+      const finalY = (doc as any).lastAutoTable?.finalY || (y + 40);
+      const margemL = 15;
+      const margemR = 15;
+      const larguraUtil = pageW - margemL - margemR;
+      let cursorY = finalY + 8;
+
+      const verificaPagina = () => {
+        if (cursorY > contentBottomY - 12) {
+          doc.addPage('a4', 'p');
+          const currentPage = (doc as any).getNumberOfPages ? (doc as any).getNumberOfPages() : 2;
+          drawBgPageSpecific(doc, currentPage);
+          cursorY = 15;
+        }
+      };
+
+      const escreveTitulo = (texto: string, yPos: number) => {
+        doc.setFont(fontFamily, 'bold');
+        doc.setFontSize(12);
+        doc.text(texto, margemL, yPos);
+        doc.setFont(fontFamily, 'normal');
+        doc.setFontSize(12);
+      };
+
+      const escreveParagrafo = (texto: string, yPos: number) => {
+        const wrapped = doc.splitTextToSize(texto, larguraUtil);
+        doc.text(wrapped, margemL, yPos);
+        return yPos + (wrapped.length * 6);
+      };
+
+      cursorY += 8; verificaPagina();
+      escreveTitulo('2. Termo de envio para reparação', cursorY);
+      cursorY += 8; verificaPagina();
+      cursorY = escreveParagrafo(
+        'O equipamento acima identificado foi encaminhado para reparação. O responsável técnico compromete-se a acompanhar o processo e registar qualquer alteração de estado.',
+        cursorY
+      );
+      cursorY += 4;
+
+      const termos = [
+        'Confirmar o diagnóstico e reportar avarias adicionais, se existirem;',
+        'Garantir rastreabilidade da intervenção técnica;',
+        'Preservar os dados institucionais conforme política interna;',
+        'Cumprir o prazo previsto de devolução do equipamento reparado.'
+      ];
+
+      termos.forEach(item => {
+        verificaPagina();
+        const lines = doc.splitTextToSize(`• ${item}`, larguraUtil);
+        doc.text(lines, margemL, cursorY);
+        cursorY += lines.length * 6;
+      });
+
+      cursorY += 8;
+      const anotacoesAltura = 44;
+      const alturaTituloAnotacoes = 6;
+      const espacoNecessarioAnotacoes = alturaTituloAnotacoes + anotacoesAltura;
+
+      if (cursorY + espacoNecessarioAnotacoes > contentBottomY - 10) {
+        doc.addPage('a4', 'p');
+        const currentPage = (doc as any).getNumberOfPages ? (doc as any).getNumberOfPages() : 2;
+        drawBgPageSpecific(doc, currentPage);
+        cursorY = 15;
+      }
+
+      escreveTitulo('3. Anotações adicionais', cursorY);
+      cursorY += alturaTituloAnotacoes;
+
+      doc.setDrawColor(148, 163, 184);
+      doc.setLineWidth(0.4);
+      doc.rect(margemL, cursorY, larguraUtil, anotacoesAltura);
+
+      const linhas = 5;
+      const espacoLinha = anotacoesAltura / (linhas + 1);
+      for (let i = 1; i <= linhas; i++) {
+        const yLinha = cursorY + (i * espacoLinha);
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(0.2);
+        doc.line(margemL + 2, yLinha, margemL + larguraUtil - 2, yLinha);
+      }
+
+      cursorY += anotacoesAltura + 10; verificaPagina();
+      const colW = (pageW - margemL - margemR - 12) / 2;
+      const leftX = margemL;
+      const rightX = margemL + colW + 12;
+      const assinaturaY = Math.min(cursorY + 6, contentBottomY - 20);
+      doc.setLineWidth(0.6);
+      doc.line(leftX, assinaturaY, leftX + colW, assinaturaY);
+      doc.line(rightX, assinaturaY, rightX + colW, assinaturaY);
+      doc.setFontSize(10);
+      doc.text('Assinatura do Técnico GSI', leftX, assinaturaY + 6);
+      doc.text('Assinatura do Responsável da Empresa', rightX, assinaturaY + 6);
+
+      const pdfBlob = doc.output('blob');
+      const safeName = (equipamento?.numeroSerie || 'equipamento').replace(/\s+/g, '_');
+      const fileName = `Guia_de_Reparacao_${safeName}.pdf`;
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+
+      this.isUploadingGuia = true;
+      this.fileUploadService.uploadFile(file, 'guias').subscribe({
+        next: (res: FileUploadResponse | any) => {
+          if (res && res.success && res.filePath) {
+            this.form.patchValue({ pathGuiaReparacao: res.filePath });
+            alert('Guia de reparação gerada e anexada com sucesso. Clique em Salvar para persistir a reparação com a guia.');
+          }
+        },
+        error: (err: any) => {
+          console.error('Falha no upload da guia de reparação:', err);
+          alert('Guia gerada, mas falhou o upload. Você ainda pode baixar/visualizar o PDF.');
+        },
+        complete: () => {
+          this.isUploadingGuia = false;
+        }
+      });
+    } catch (err) {
+      console.error('Erro ao gerar Guia de Reparação:', err);
+      alert('Falha ao gerar a Guia de Reparação em PDF.');
+    }
+  }
+
+  private getMarcaNomePorModeloId(modeloId: number | null | undefined): string {
+    if (!modeloId) return '';
+    const modelo = this.modelos.find((m: any) => m.id === modeloId);
+    if (!modelo) return '';
+    const marca = this.marcas.find((mc: any) => mc.id === modelo.marcaId);
+    return marca ? (marca.nome ?? '') : '';
   }
 }

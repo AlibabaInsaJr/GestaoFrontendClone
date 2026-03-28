@@ -24,6 +24,12 @@ import { DevolucoesService } from '../../services/devolucoes.service';
 import { BaixasService } from '../../services/baixas.service';
 import { AuditService } from '../../services/audit.service';
 import { LoadingService } from '../../services/loading.service';
+import {
+  ConsumivelImpressoraDto,
+  ConsumivelImpressoraPayload,
+  ConsumivelImpressoraService,
+  TipoImpressora
+} from '../../services/consumivel-impressora.service';
 import { Subject, forkJoin, interval, of } from 'rxjs';
 import { catchError, startWith, switchMap, takeUntil } from 'rxjs/operators';
 
@@ -49,7 +55,7 @@ interface PrinterConsumables {
 interface PrinterSupplyItem {
   id: number;
   referencia: string;
-  tipo: 'COLORIDA' | 'PRETO_BRANCO';
+  tipo: TipoImpressora;
   localizacao: string;
   enderecoIp: string;
   consumiveis: PrinterConsumables;
@@ -117,32 +123,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedTrend: 'alocacoes' | 'reparacoes' | 'devolucoes' = 'alocacoes';
 
   recentActivities: Activity[] = [];
-  impressorasConsumiveis: PrinterSupplyItem[] = [
-    {
-      id: 1,
-      referencia: 'HP-LJ-4001',
-      tipo: 'PRETO_BRANCO',
-      localizacao: '3º Andar',
-      enderecoIp: '10.10.3.21',
-      consumiveis: { black: 64 }
-    },
-    {
-      id: 2,
-      referencia: 'Canon-CX-775',
-      tipo: 'COLORIDA',
-      localizacao: '2º Andar',
-      enderecoIp: '10.10.2.47',
-      consumiveis: { black: 71, cyan: 52, magenta: 34, yellow: 60 }
-    },
-    {
-      id: 3,
-      referencia: 'Epson-MC-992',
-      tipo: 'COLORIDA',
-      localizacao: 'R/C',
-      enderecoIp: '10.10.0.15',
-      consumiveis: { black: 28, cyan: 20, magenta: 18, yellow: 25 }
-    }
-  ];
+  impressorasConsumiveis: PrinterSupplyItem[] = [];
 
   novaImpressora: Omit<PrinterSupplyItem, 'id' | 'consumiveis'> & { nivelBase: number } = {
     referencia: '',
@@ -160,6 +141,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     { label: 'Baixas', count: 0 }
   ];
 
+  distributionByAction: { label: string; count: number }[] = [];
+  private readonly distributionTypeCatalog: { key: string; label: string }[] = [
+    { key: 'ALOCACAO', label: 'Alocações' },
+    { key: 'DEVOLUCAO', label: 'Devoluções' },
+    { key: 'REPARACAO', label: 'Reparações' },
+    { key: 'BAIXA', label: 'Baixas' },
+    { key: 'AQUISICAO', label: 'Aquisições' },
+    { key: 'OUTROS', label: 'Outros' }
+  ];
+
   equipmentByStatus = [
     { status: 'NOVO', count: 0 },
     { status: 'BOM', count: 0 },
@@ -174,13 +165,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private calendarCursor = new Date();
   pendingRepairReminders: RepairReminder[] = [];
 
-  private readonly estadosOcultos = new Set<string>([
-    'BAIXADO',
-    'PERDIDO',
-    'PATRIMONIO_AVARIADO',
-    'PATRIMONIO_BOM'
-  ]);
-
   constructor(
     private equipamentoService: EquipamentoService,
     private alocacaoService: AlocacaoService,
@@ -191,7 +175,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private auditService: AuditService,
     private loadingService: LoadingService,
-    private authService: AuthService
+    private authService: AuthService,
+    private consumivelImpressoraService: ConsumivelImpressoraService
   ) {}
 
   private chartsInitialized = false;
@@ -215,6 +200,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.generateCalendar();
     this.carregarEstatisticas();
     this.carregarAtividadesRecentes();
+    this.carregarConsumiveisImpressoras();
     this.iniciarSincronizacaoLembretesReparacao();
     this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
     console.log('Dashboard inicializado');
@@ -295,17 +281,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       )
     }).subscribe({
       next: ({ equipamentos, alocacoes, reparacoes, devolucoes, baixas }) => {
-        const equipamentosVisiveis = (equipamentos || []).filter((e: any) => {
-          const estado = (e?.estado ?? '').toString().trim().toUpperCase();
-          return !this.estadosOcultos.has(estado);
-        });
+        const equipamentosApi = equipamentos || [];
 
-        // Estatísticas principais
-        this.equipmentStats.total = equipamentosVisiveis.length;
-        this.equipmentStats.allocated = equipamentosVisiveis.filter((e: any) => e.estado === 'ALOCADO').length;
-        this.equipmentStats.inRepair = equipamentosVisiveis.filter((e: any) => e.estado === 'REPARACAO').length;
-        this.equipmentStats.available = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_NOVO' || e.estado === 'STOCK_BOM').length;
-        this.equipmentStats.writtenOff = equipamentosVisiveis.filter((e: any) => e.estado === 'BAIXADO').length;
+        // Estatísticas principais (100% API)
+        this.equipmentStats.total = equipamentosApi.length;
+        this.equipmentStats.allocated = equipamentosApi.filter((e: any) => e.estado === 'ALOCADO').length;
+        this.equipmentStats.inRepair = equipamentosApi.filter((e: any) => e.estado === 'REPARACAO').length;
+        this.equipmentStats.available = equipamentosApi.filter((e: any) => e.estado === 'STOCK_NOVO' || e.estado === 'STOCK_BOM').length;
+        this.equipmentStats.writtenOff = equipamentosApi.filter((e: any) => e.estado === 'BAIXADO' || e.estado === 'PERDIDO').length;
 
         // Contadores por tipo de ação
         this.allocationTypes = [
@@ -315,11 +298,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           { label: 'Baixas', count: baixas?.length || 0 }
         ];
 
-        // Distribuição por estado (mapear enums do backend para rótulos de UI)
-        const novo = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_NOVO').length;
-        const bom = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_BOM').length;
-        const avariado = equipamentosVisiveis.filter((e: any) => e.estado === 'STOCK_AVARIADO').length;
-        const obsoleto = equipamentosVisiveis.filter((e: any) => e.estado === 'BAIXADO' || e.estado === 'PERDIDO').length;
+        // Distribuição por estado (100% API)
+        const novo = equipamentosApi.filter((e: any) => e.estado === 'STOCK_NOVO').length;
+        const bom = equipamentosApi.filter((e: any) => e.estado === 'STOCK_BOM').length;
+        const avariado = equipamentosApi.filter((e: any) => e.estado === 'STOCK_AVARIADO').length;
+        const obsoleto = equipamentosApi.filter((e: any) => e.estado === 'BAIXADO' || e.estado === 'PERDIDO').length;
 
         this.equipmentByStatus = [
           { status: 'NOVO', count: novo },
@@ -327,6 +310,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           { status: 'AVARIADO', count: avariado },
           { status: 'OBSOLETO', count: obsoleto }
         ];
+
+        // Distribuição por tipo de ação (alocações, devoluções, reparações, baixas, ...)
+        this.distributionByAction = this.buildDefaultDistributionByAction();
 
          // Tendências mensais para os últimos 6 meses
          this.months = this.getLastSixMonthsLabels();
@@ -375,6 +361,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       })
     ).subscribe((historico: any[]) => {
       if (historico && historico.length) {
+        this.distributionByAction = this.buildDistributionByHistorico(historico);
+        this.updateCharts();
+
         // Mapear da projeção do backend para o modelo de Activity
         // HistoricoEventoProjection: equipamentoId, dataEvento, tipoEvento, eventoId
         this.recentActivities = historico.slice(0, 10).map((h: any) => ({
@@ -412,6 +401,46 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'AQUISICAO': return 'Equipamento adquirido';
       default: return tipo || 'Evento';
     }
+  }
+
+  private buildDefaultDistributionByAction(): { label: string; count: number }[] {
+    const defaults = {
+      ALOCACAO: this.allocationTypes[0]?.count || 0,
+      REPARACAO: this.allocationTypes[1]?.count || 0,
+      DEVOLUCAO: this.allocationTypes[2]?.count || 0,
+      BAIXA: this.allocationTypes[3]?.count || 0,
+      AQUISICAO: 0,
+      OUTROS: 0
+    };
+
+    return this.distributionTypeCatalog.map((item) => ({
+      label: item.label,
+      count: defaults[item.key as keyof typeof defaults] || 0
+    }));
+  }
+
+  private buildDistributionByHistorico(historico: any[]): { label: string; count: number }[] {
+    const counters: Record<string, number> = {
+      ALOCACAO: 0,
+      DEVOLUCAO: 0,
+      REPARACAO: 0,
+      BAIXA: 0,
+      AQUISICAO: 0,
+      OUTROS: 0
+    };
+
+    (historico || []).forEach((item: any) => {
+      const rawType = String(item?.tipoEvento || '').toUpperCase();
+      if (counters[rawType] != null) {
+        counters[rawType] += 1;
+      } else {
+        counters['OUTROS'] += 1;
+      }
+    });
+
+    return this.distributionTypeCatalog
+      .map((item) => ({ label: item.label, count: counters[item.key] || 0 }))
+      .filter((item) => item.count > 0 || item.label !== 'Outros');
   }
   ngAfterViewInit(): void {
     // Aguardar um pouco mais para garantir que os elementos estão prontos
@@ -464,15 +493,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.charts['pie'] = new Chart(doughnutCtx, {
           type: 'doughnut',
           data: {
-            labels: this.allocationTypes.map(a => a.label),
+            labels: this.distributionByAction.map(t => t.label),
             datasets: [{
-              data: this.allocationTypes.map(a => a.count),
-              backgroundColor: [
-                '#7C3AED',
-                '#F59E0B',
-                '#06B6D4',
-                '#F43F5E'
-              ],
+              data: this.distributionByAction.map(t => t.count),
+              backgroundColor: this.buildChartPalette(this.distributionByAction.length),
               borderWidth: 0,
               borderRadius: 10,
               hoverOffset: 10,
@@ -738,7 +762,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/reparacoes', reminder.repairId]);
   }
 
-  adicionarImpressoraMock(): void {
+  adicionarImpressora(): void {
     const referencia = this.novaImpressora.referencia.trim();
     const localizacao = this.novaImpressora.localizacao.trim();
     const enderecoIp = this.novaImpressora.enderecoIp.trim();
@@ -752,38 +776,55 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       ? { black: baseLevel, cyan: baseLevel, magenta: baseLevel, yellow: baseLevel }
       : { black: baseLevel };
 
-    const nextId = this.impressorasConsumiveis.length
-      ? Math.max(...this.impressorasConsumiveis.map((p) => p.id)) + 1
-      : 1;
-
-    this.impressorasConsumiveis = [
-      ...this.impressorasConsumiveis,
-      {
-        id: nextId,
-        referencia,
-        tipo: this.novaImpressora.tipo,
-        localizacao,
-        enderecoIp,
-        consumiveis
+    const payload: ConsumivelImpressoraPayload = {
+      referencia,
+      tipo: this.novaImpressora.tipo,
+      localizacao,
+      enderecoIp,
+      consumiveis: {
+        black: consumiveis.black,
+        cyan: this.novaImpressora.tipo === 'COLORIDA' ? (consumiveis.cyan ?? baseLevel) : null,
+        magenta: this.novaImpressora.tipo === 'COLORIDA' ? (consumiveis.magenta ?? baseLevel) : null,
+        yellow: this.novaImpressora.tipo === 'COLORIDA' ? (consumiveis.yellow ?? baseLevel) : null
       }
-    ];
-
-    this.impressoraSelecionadaId = nextId;
-
-    this.novaImpressora = {
-      referencia: '',
-      tipo: 'PRETO_BRANCO',
-      localizacao: '',
-      enderecoIp: '',
-      nivelBase: 100
     };
 
-    this.refreshConsumiveisCharts();
+    this.consumivelImpressoraService.criar(payload).subscribe({
+      next: (created) => {
+        if (created?.id) {
+          this.impressoraSelecionadaId = created.id;
+        }
+        this.novaImpressora = {
+          referencia: '',
+          tipo: 'PRETO_BRANCO',
+          localizacao: '',
+          enderecoIp: '',
+          nivelBase: 100
+        };
+        this.carregarConsumiveisImpressoras();
+      },
+      error: (err) => {
+        this.markError('consumíveis (criação)', err);
+      }
+    });
   }
 
   atualizarNivelConsumivel(printer: PrinterSupplyItem, key: keyof PrinterConsumables, value: number): void {
     printer.consumiveis[key] = this.clampPercent(value);
-    this.refreshConsumiveisCharts();
+    const payload = this.toPayload(printer);
+    this.consumivelImpressoraService.atualizar(printer.id, payload).subscribe({
+      next: (updated) => {
+        if (updated?.id) {
+          this.replacePrinter(updated);
+          this.refreshConsumiveisCharts();
+          return;
+        }
+        this.carregarConsumiveisImpressoras();
+      },
+      error: (err) => {
+        this.markError('consumíveis (atualização)', err);
+      }
+    });
   }
 
   selecionarImpressora(printerId: number): void {
@@ -807,8 +848,19 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     selected.referencia = referencia.trim() || selected.referencia;
     selected.enderecoIp = enderecoIp.trim() || selected.enderecoIp;
     selected.localizacao = localizacao.trim() || selected.localizacao;
-
-    this.refreshConsumiveisCharts();
+    this.consumivelImpressoraService.atualizar(selected.id, this.toPayload(selected)).subscribe({
+      next: (updated) => {
+        if (updated?.id) {
+          this.replacePrinter(updated);
+          this.refreshConsumiveisCharts();
+          return;
+        }
+        this.carregarConsumiveisImpressoras();
+      },
+      error: (err) => {
+        this.markError('consumíveis (edição)', err);
+      }
+    });
   }
 
   apagarImpressoraSelecionada(): void {
@@ -818,26 +870,33 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const confirmar = confirm(`Deseja apagar a impressora ${selected.referencia}?`);
     if (!confirmar) return;
 
-    this.impressorasConsumiveis = this.impressorasConsumiveis.filter((p) => p.id !== selected.id);
-    this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
-    this.refreshConsumiveisCharts();
+    this.consumivelImpressoraService.remover(selected.id).subscribe({
+      next: () => {
+        this.impressorasConsumiveis = this.impressorasConsumiveis.filter((p) => p.id !== selected.id);
+        this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
+        this.refreshConsumiveisCharts();
+      },
+      error: (err) => {
+        this.markError('consumíveis (remoção)', err);
+      }
+    });
   }
 
   async exportarConsumiveisPdf(): Promise<void> {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageHeight = doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const firstPageContentTop = 100;
+    const nextPagesContentTop = 16;
+    const contentBottom = pageHeight - 12;
 
     const firstPageTemplate = await this.loadAssetDataUrl('assets/Relatorio.png');
     const nextPageTemplate = await this.loadAssetDataUrl('assets/Second page.png');
 
     this.renderPageTemplate(doc, firstPageTemplate || nextPageTemplate, pageWidth, pageHeight);
 
-    const contentTop = 100;
-    const contentBottom = pageHeight - 20;
-
     autoTable(doc, {
-      startY: contentTop,
+      startY: firstPageContentTop,
       head: [['Referência', 'Tipo', 'Localização', 'IP', 'Média (%)']],
       body: this.impressorasConsumiveis.map((p) => [
         p.referencia,
@@ -846,7 +905,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         p.enderecoIp,
         `${this.getPrinterAverage(p)}%`
       ]),
-      margin: { left: 14, right: 14 },
+      margin: { top: nextPagesContentTop, left: 14, right: 14 },
       styles: { fontSize: 9 },
       willDrawPage: (data) => {
         if (data.pageNumber === 1) {
@@ -857,14 +916,16 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    let yPos = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 8 : contentTop + 15;
+    let yPos = (doc as any).lastAutoTable?.finalY
+      ? (doc as any).lastAutoTable.finalY + 8
+      : firstPageContentTop + 15;
 
     this.impressorasConsumiveis.forEach((printer, index) => {
-      const blocoAltura = 36 + this.getConsumivelKeys(printer).length * 8;
+      const blocoAltura = 24 + this.getConsumivelKeys(printer).length * 8;
       if (yPos + blocoAltura > contentBottom) {
         doc.addPage();
         this.renderPageTemplate(doc, nextPageTemplate, pageWidth, pageHeight);
-        yPos = 16;
+        yPos = nextPagesContentTop;
       }
 
       doc.setFontSize(12);
@@ -993,6 +1054,76 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.renderConsumiveisResumoChart();
     this.renderConsumiveisDetalheChart();
+  }
+
+  private carregarConsumiveisImpressoras(): void {
+    this.consumivelImpressoraService.listar().subscribe({
+      next: (items: any) => {
+        const list = this.normalizeConsumiveisResponse(items);
+        this.impressorasConsumiveis = list.map((item) => this.mapDtoToPrinter(item));
+        this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
+        this.refreshConsumiveisCharts();
+      },
+      error: (err) => {
+        this.markError('consumíveis (listagem)', err);
+        this.impressorasConsumiveis = [];
+        this.impressoraSelecionadaId = 0;
+        this.refreshConsumiveisCharts();
+      }
+    });
+  }
+
+  private normalizeConsumiveisResponse(items: any): ConsumivelImpressoraDto[] {
+    if (Array.isArray(items)) {
+      return items as ConsumivelImpressoraDto[];
+    }
+
+    if (Array.isArray(items?.content)) {
+      return items.content as ConsumivelImpressoraDto[];
+    }
+
+    return [];
+  }
+
+  private mapDtoToPrinter(dto: ConsumivelImpressoraDto): PrinterSupplyItem {
+    return {
+      id: dto.id,
+      referencia: dto.referencia,
+      tipo: dto.tipo,
+      localizacao: dto.localizacao,
+      enderecoIp: dto.enderecoIp,
+      consumiveis: {
+        black: this.clampPercent(dto.consumiveis?.black),
+        cyan: dto.consumiveis?.cyan == null ? undefined : this.clampPercent(dto.consumiveis.cyan),
+        magenta: dto.consumiveis?.magenta == null ? undefined : this.clampPercent(dto.consumiveis.magenta),
+        yellow: dto.consumiveis?.yellow == null ? undefined : this.clampPercent(dto.consumiveis.yellow)
+      }
+    };
+  }
+
+  private toPayload(printer: PrinterSupplyItem): ConsumivelImpressoraPayload {
+    const black = this.clampPercent(printer.consumiveis.black);
+    const cyan = printer.tipo === 'COLORIDA' ? this.clampPercent(printer.consumiveis.cyan ?? 0) : null;
+    const magenta = printer.tipo === 'COLORIDA' ? this.clampPercent(printer.consumiveis.magenta ?? 0) : null;
+    const yellow = printer.tipo === 'COLORIDA' ? this.clampPercent(printer.consumiveis.yellow ?? 0) : null;
+
+    return {
+      referencia: (printer.referencia || '').trim(),
+      tipo: printer.tipo,
+      localizacao: (printer.localizacao || '').trim(),
+      enderecoIp: (printer.enderecoIp || '').trim(),
+      consumiveis: {
+        black,
+        cyan,
+        magenta,
+        yellow
+      }
+    };
+  }
+
+  private replacePrinter(updated: ConsumivelImpressoraDto): void {
+    const mapped = this.mapDtoToPrinter(updated);
+    this.impressorasConsumiveis = this.impressorasConsumiveis.map((p) => p.id === mapped.id ? mapped : p);
   }
 
   private renderConsumiveisResumoChart(): void {
@@ -1140,6 +1271,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate([rota]);
   }
 
+
+  getDistributionByActionTotal(): number {
+    return this.distributionByAction.reduce((sum, item) => sum + item.count, 0);
+  }
+
   /**
    * Calcula a percentagem de equipamentos alocados
    * @returns Percentagem de equipamentos alocados
@@ -1179,6 +1315,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       ? Math.round((this.equipmentStats.writtenOff / this.equipmentStats.total) * 100) 
       : 0;
   }
+
+
+  private buildChartPalette(size: number): string[] {
+    const palette = ['#7C3AED', '#F59E0B', '#06B6D4', '#F43F5E', '#22C55E', '#3B82F6', '#E11D48', '#14B8A6'];
+    if (size <= 0) return palette.slice(0, 4);
+    return Array.from({ length: size }, (_, i) => palette[i % palette.length]);
+  }
+
   // Calcula contagem por mês para os últimos 6 meses, baseado no campo de data
   private calcularTrendMensalPorCampo(items: any[], campoData: string): number[] {
     const monthsMeta = this.getLastSixMonthsMeta();

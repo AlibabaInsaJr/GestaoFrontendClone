@@ -1,6 +1,6 @@
 <h1>Reparações</h1>
 <div class="equipamentos-page">
-  <!-- Filtros -->ng   <div class="filtros">
+  <!-- Filtros -->  <div class="filtros">
     <ng-select [items]="empresas" bindLabel="designacao" bindValue="id" [(ngModel)]="filtroEmpresa" placeholder="Empresa" [clearable]="true"></ng-select>
 
     <ng-select [items]="tecnicos" bindLabel="nome" bindValue="id" [(ngModel)]="filtroTecnico" placeholder="Técnico GSI" [clearable]="true"></ng-select>
@@ -111,7 +111,14 @@
         </div>
 
         <div class="modal-actions">
-          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button
+            type="button"
+            class="btn-gerar"
+            (click)="gerarGuiaReparacao()"
+            [disabled]="isUploadingGuia || !form.get('empresaId')?.value || !form.get('tecnicoGSIId')?.value || !form.get('equipamentoId')?.value || !form.get('dataEnvioReparacao')?.value || !form.get('avaria')?.value">
+            {{ isUploadingGuia ? 'A carregar guia...' : 'Gerar Guia' }}
+          </button>
+          <button type="submit" [disabled]="form.invalid || isUploadingGuia">Salvar</button>
           <button type="button" (click)="fecharModal()">Cancelar</button>
         </div>
       </form>

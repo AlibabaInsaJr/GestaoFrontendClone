@@ -135,7 +135,7 @@
         <div class="status-list">
           <div class="status-row" *ngFor="let item of equipmentByStatus; let i = index">
             <div class="status-row__label">
-              <span class="status-dot" [style.background]="chartColors[i]"></span>
+              <span class="status-dot" [style.background]="chartColors[i % chartColors.length]"></span>
               <span>{{ item.status }}</span>
             </div>
             <div class="status-row__bar">
@@ -166,7 +166,7 @@
         <input type="text" placeholder="Localização (ex: 3º Andar)" [(ngModel)]="novaImpressora.localizacao" />
         <input type="text" placeholder="Endereço IP" [(ngModel)]="novaImpressora.enderecoIp" />
         <input type="number" min="0" max="100" placeholder="Nível inicial (%)" [(ngModel)]="novaImpressora.nivelBase" />
-        <button type="button" class="btn-add-printer" (click)="adicionarImpressoraMock()">Registar</button>
+        <button type="button" class="btn-add-printer" (click)="adicionarImpressora()">Registar</button>
       </div>
 
       <div class="consumiveis-grid">
@@ -238,15 +238,15 @@
         <div class="donut-visual">
           <canvas #pieChart width="200px" height="100px"></canvas>
           <div class="donut-center">
-            <strong>{{ allocationTypes[0].count + allocationTypes[1].count + allocationTypes[2].count + allocationTypes[3].count }}</strong>
+            <strong>{{ getDistributionByActionTotal() }}</strong>
             <span>Eventos</span>
           </div>
         </div>
 
         <div class="donut-legend">
-          <div class="legend-line" *ngFor="let type of allocationTypes; let i = index">
+          <div class="legend-line" *ngFor="let type of distributionByAction; let i = index">
             <div class="legend-line__label">
-              <span class="status-dot" [style.background]="chartColors[i]"></span>
+              <span class="status-dot" [style.background]="chartColors[i % chartColors.length]"></span>
               <span>{{ type.label }}</span>
             </div>
             <strong>{{ type.count }}</strong>
