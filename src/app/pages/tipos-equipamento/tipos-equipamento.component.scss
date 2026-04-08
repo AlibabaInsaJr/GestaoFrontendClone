@@ -6,6 +6,11 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
   font-family: 'Segoe UI', sans-serif;
   color: #1e293b;
+  transition: filter 0.2s ease;
+
+  &.modal-open {
+    filter: blur(4px);
+  }
 
   h1 {
     font-size: 1.8rem;
@@ -13,7 +18,6 @@
     margin-bottom: 1.5rem;
   }
 
-  /* Filtros em bloco elegante (mesmo estilo de Equipamentos) */
   .filtros {
     display: flex;
     flex-wrap: wrap;
@@ -25,8 +29,42 @@
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 
+    .ng-select {
+      min-width: 260px;
+    }
+
+    .ng-select .ng-select-container {
+      min-height: 40px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background-color: #f9fafb;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .ng-select .ng-select-container:hover {
+      background-color: #f3f4f6;
+      border-color: #cbd5e1;
+    }
+
+    .ng-select .ng-select-container:focus-within {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+      background-color: #ffffff;
+    }
+
+    .ng-select .ng-value,
+    .ng-select .ng-placeholder {
+      color: #1f2937;
+      font-size: 0.95rem;
+    }
+
+    .ng-select .ng-arrow-wrapper,
+    .ng-select .ng-clear-wrapper {
+      color: #64748b;
+    }
+
     .novo-btn {
-      background-color: #22c55e; /* verde */
+      background-color: #22c55e;
       color: #ffffff;
       border: none;
       border-radius: 8px;
@@ -37,266 +75,305 @@
       gap: 0.5rem;
       box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
       cursor: pointer;
-    }
-    .novo-btn:hover { background-color: #16a34a; }
-    .novo-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35); }
-
-    input {
-      padding: 0.65rem 0.9rem;
-      font-size: 0.95rem;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      background-color: #f9fafb;
-      color: #1f2937;
-      outline: none;
-      min-width: 260px;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 
       &:hover {
-        background-color: #f3f4f6;
-        border-color: #cbd5e1;
+        background-color: #16a34a;
       }
 
-      &:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-        background-color: #ffffff;
+      &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
       }
     }
+  }
 
-    .ng-select {
-      min-width: 220px;
+  .tabela-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 6px;
+    max-height: 60vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(18, 18, 18, 0.05);
+    background-color: white;
+    min-width: 900px;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background-color: #f1f5f9;
     }
-    .ng-select .ng-select-container {
-      padding: 0.25rem 0.6rem;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
+
+    tbody tr:nth-child(even) {
       background-color: #f9fafb;
-      min-height: 40px;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
-    .ng-select .ng-select-container:hover {
-      background-color: #f3f4f6;
-      border-color: #cbd5e1;
-    }
-    .ng-select .ng-select-container:focus-within {
-      border-color: #4f46e5; /* mesma cor de foco usada em Equipamentos */
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
-      background-color: #ffffff;
-    }
-    .ng-select .ng-value,
-    .ng-select .ng-placeholder {
-      color: #1f2937;
-      font-size: 0.95rem;
-    }
-    .ng-select .ng-arrow-wrapper,
-    .ng-select .ng-clear-wrapper {
-      color: #64748b;
+
+    tbody tr:hover {
+      background-color: #eef2ff;
+      transition: background-color 0.15s ease-in-out;
     }
   }
 
-  .acoes button {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    outline: none !important;
-    box-shadow: none !important;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  th,
+  td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.75rem 1rem;
   }
-}
+
+  th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: #091423;
+  }
+
+  td {
+    color: #435671;
+  }
 
   .acoes {
     display: flex;
     gap: 0.5rem;
     justify-content: center;
+
+    button {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      box-shadow: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .btn-edit {
+      color: #16a34a;
+
+      &:hover {
+        color: #15803d;
+      }
+    }
+
+    .btn-delete {
+      color: #dc2626;
+
+      &:hover {
+        color: #b91c1c;
+      }
+    }
+
+    .btn-view {
+      color: #2563eb;
+
+      &:hover {
+        color: #1d4ed8;
+      }
+    }
   }
+}
 
-  .acoes .btn-edit { color: #16a34a; }
-  .acoes .btn-edit:hover { color: #15803d; }
-  td.acoes .btn-edit i { color: #16a34a !important; }
-  td.acoes .btn-edit:hover i { color: #15803d !important; }
-
-  .acoes .btn-delete { color: #dc2626; }
-  .acoes .btn-delete:hover { color: #b91c1c; }
-  td.acoes .btn-delete i { color: #dc2626 !important; }
-  td.acoes .btn-delete:hover i { color: #b91c1c !important; }
-
-  .acoes .btn-view { color: #2563eb; }
-  .acoes .btn-view:hover { color: #1d4ed8; }
-  td.acoes .btn-view i { color: #2563eb !important; }
-  td.acoes .btn-view:hover i { color: #1d4ed8 !important; }
-
-  table tbody tr:nth-child(even) {
-    background-color: #f9fafb;
-  }
-
-  table tbody tr:hover {
-    background-color: #eef2ff;
-    transition: background-color 0.15s ease-in-out;
-  }
-
-/* Modal (mantém o mesmo estilo do Equipamentos) */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1.5rem;
+  animation: overlayFadeIn 220ms ease-out;
 }
 
-.modal {
+.modal.modern-form {
   background: #ffffff;
   color: #1e293b;
-  padding: 2rem;
-  width: 500px;
-  max-width: 95vw;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  width: min(600px, 94vw);
+  border-radius: 28px;
+  padding: 1.8rem 2rem 1.6rem;
+  border: 1px solid #e6e9f0;
+  box-shadow: 0 30px 65px rgba(15, 23, 42, 0.22);
+  transform-origin: center center;
+  animation: modalPopIn 300ms cubic-bezier(0.22, 1, 0.36, 1);
 
   h2 {
-    margin-bottom: 1.5rem;
-    font-size: 1.4rem;
-    font-weight: 600;
+    margin: 0 0 1.2rem;
+    font-size: clamp(1.5rem, 1.8vw, 1.95rem);
+    font-weight: 700;
+    color: #2e3460;
     text-align: center;
   }
 
-  form { display: flex; flex-direction: column; gap: 1.5rem; }
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 0.75rem 1rem;
+    max-width: 500px;
+    width: 100%;
+    margin: 0 auto;
 
-    div {
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    > div {
       display: flex;
       flex-direction: column;
 
-      label { font-weight: 500; margin-bottom: 0.3rem; }
+      label {
+        margin-bottom: 0.35rem;
+        font-weight: 700;
+        color: #28315d;
+        font-size: 0.98rem;
+      }
 
       input {
-        padding: 0.55rem 0.75rem;
-        font-size: 1rem;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
-        background: #f8fafc;
-        color: #1e293b;
+        min-height: 44px;
+        padding: 0.62rem 0.8rem;
+        border-radius: 10px;
+        border: 1px solid #cfd5e3;
+        background: #f9fbff;
+        color: #455174;
         outline: none;
+        width: 100%;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+
+        &:hover {
+          background-color: #f3f4f6;
+          border-color: #cbd5e1;
+        }
 
         &:focus {
-          border-color: #2563eb;
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+          border-color: #4f46e5;
+          box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+          background-color: #ffffff;
         }
       }
     }
   }
 
-  .modal.modern-form .form-grid div label {
-    font-weight: 600;
-    color: #334155;
-    margin-bottom: 0.4rem;
-  }
-
-  .modal-figure { display: flex; justify-content: center; margin-bottom: 1rem; }
-  .modal-illustration {
-    width: 55%;
-    max-width: 320px;
-    height: auto;
-    border-radius: 10px;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-  }
-
   .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
+    margin-top: 0.15rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.7rem;
+    max-width: 500px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 
     button {
-      padding: 0.6rem 1.4rem;
-      font-weight: 500;
-      border-radius: 6px;
+      min-height: 46px;
+      border-radius: 10px;
+      font-size: 0.98rem;
+      font-weight: 700;
       border: none;
       cursor: pointer;
-      font-size: 1rem;
+    }
 
-      &:first-child {
-        background: #2563eb;
-        color: white;
-        &:hover { background: #1e40af; }
+    button[type='submit'] {
+      background: linear-gradient(90deg, #6656ea 0%, #7165f6 100%);
+      color: #ffffff;
+      box-shadow: 0 10px 24px rgba(102, 86, 234, 0.32);
+
+      &:hover:not(:disabled) {
+        filter: brightness(0.98);
       }
 
-      &:last-child {
-        background: #e5e7eb;
-        color: #1f2937;
-        &:hover { background: #d1d5db; }
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    button[type='button'] {
+      min-width: 130px;
+      background: #eef1f7;
+      color: #344257;
+    }
+  }
+}
+
+.erro {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+@media (max-width: 768px) {
+  .equipamentos-page {
+    .filtros {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    table {
+      font-size: 0.85rem;
+    }
+  }
+
+  .modal.modern-form {
+    padding: 1rem;
+    border-radius: 16px;
+
+    .form-grid {
+      grid-template-columns: 1fr;
+      max-width: 100%;
+    }
+
+    .modal-actions {
+      grid-template-columns: 1fr;
+      max-width: 100%;
+
+      button[type='button'] {
+        min-width: 100%;
       }
     }
   }
 }
 
-/* Mensagens de erro nos campos */
-.erro { color: #b91c1c; font-size: 0.85rem; margin-top: 0.25rem; }
-input.ng-invalid.ng-touched, select.ng-invalid.ng-touched { border-color: #ef4444; background-color: #fef2f2; }
-
-@media (max-width: 768px) {
-  .filtros { flex-direction: column; align-items: stretch; }
-  .modal { width: 95vw; padding: 1rem; }
-  .form-grid { grid-template-columns: 1fr; }
-  table { font-size: 0.85rem; }
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-/* Tabela com o mesmo estilo do componente Equipamentos */
-.equipamentos-page .tabela-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  margin-top: 1rem;
-  border-radius: 6px;
-  max-height: 60vh; /* scroll vertical */
-  overflow-y: auto;
-  position: relative;
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
-
-.equipamentos-page table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(18, 18, 18, 0.05);
-  background-color: white;
-  min-width: 900px; /* igual Equipamentos */
-}
-
-.equipamentos-page table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: #f1f5f9;
-}
-
-.equipamentos-page th,
-.equipamentos-page td {
-  text-align: center;
-  vertical-align: middle;
-  padding: 0.75rem 1rem;
-}
-
-.equipamentos-page th {
-  background-color: #f1f5f9;
-  font-weight: 600;
-  color: #091423;
-}
-
-.equipamentos-page td { color: #435671; }
-
-/* Listras e hover replicados */
-.equipamentos-page table tbody tr:nth-child(even) { background-color: #f9fafb; }
-.equipamentos-page table tbody tr:hover { background-color: #eef2ff; transition: background-color 0.15s ease-in-out; }

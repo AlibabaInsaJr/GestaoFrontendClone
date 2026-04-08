@@ -1,4 +1,4 @@
-<div class="equipamentos-page">
+<div class="equipamentos-page" [class.modal-open]="showModal">
   <!-- Header -->
    <h1>Equipamentos</h1>
     <!-- Filtros -->
@@ -69,55 +69,50 @@
     <div class="empty-state" *ngIf="!loading && getEquipamentosFiltrados().length === 0">
       Nenhum equipamento encontrado.
     </div>
-  
-    <!-- Modal -->
-    <div class="modal-overlay" *ngIf="showModal">
-      <div class="modal modern-form">
-        <h2>{{ editando ? 'Editar' : 'Novo' }} Equipamento</h2>
+  </div>
 
-        <div class="modal-figure">
-          <img src="assets/NovoEquipameno.png" alt="Ilustração Novo Equipamento" class="modal-illustration" />
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal">
+    <div class="modal modern-form">
+      <h2>{{ editando ? 'Editar' : 'Novo' }} Equipamento</h2>
+
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="form-grid">
+          <div>
+            <label>Modelo:</label>
+            <ng-select [items]="modelos" bindLabel="nome" bindValue="id" formControlName="modelo_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="form.get('modelo_id')?.touched && form.get('modelo_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Tipo:</label>
+            <ng-select [items]="tipos" bindLabel="nome" bindValue="id" formControlName="tipoEquipamento_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="form.get('tipoEquipamento_id')?.touched && form.get('tipoEquipamento_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Aquisição:</label>
+            <ng-select [items]="aquisicoes" bindLabel="descricao" bindValue="id" formControlName="aquisicao_id" placeholder="Selecione"></ng-select>
+            <small *ngIf="form.get('aquisicao_id')?.touched && form.get('aquisicao_id')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Número de Série:</label>
+            <input type="text" formControlName="numeroSerie" />
+            <small *ngIf="form.get('numeroSerie')?.touched && form.get('numeroSerie')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div class="full-width">
+            <label>Data de Registo:</label>
+            <input type="date" formControlName="dataRegisto" />
+            <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
+          </div>
         </div>
-  
-        <form [formGroup]="form" (ngSubmit)="salvar()">
-          <div class="form-grid">
-            <div>
-              <label>Modelo:</label>
-              <ng-select [items]="modelos" bindLabel="nome" bindValue="id" formControlName="modelo_id" placeholder="Selecione"></ng-select>
-              <small *ngIf="form.get('modelo_id')?.touched && form.get('modelo_id')?.invalid" class="erro">Obrigatório</small>
-            </div>
-  
-            <div>
-              <label>Tipo:</label>
-              <ng-select [items]="tipos" bindLabel="nome" bindValue="id" formControlName="tipoEquipamento_id" placeholder="Selecione"></ng-select>
-              <small *ngIf="form.get('tipoEquipamento_id')?.touched && form.get('tipoEquipamento_id')?.invalid" class="erro">Obrigatório</small>
-            </div>
-  
-            <div>
-              <label>Aquisição:</label>
-              <ng-select [items]="aquisicoes" bindLabel="descricao" bindValue="id" formControlName="aquisicao_id" placeholder="Selecione"></ng-select>
-              <small *ngIf="form.get('aquisicao_id')?.touched && form.get('aquisicao_id')?.invalid" class="erro">Obrigatório</small>
-            </div>
-  
-            <div>
-              <label>Número de Série:</label>
-              <input type="text" formControlName="numeroSerie" />
-              <small *ngIf="form.get('numeroSerie')?.touched && form.get('numeroSerie')?.invalid" class="erro">Obrigatório</small>
-            </div>
-  
-            <div>
-              <label>Data de Registo:</label>
-              <input type="date" formControlName="dataRegisto" />
-              <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
-            </div>
-          </div>
-  
-          <div class="modal-actions">
-            <button type="submit" [disabled]="form.invalid">Salvar</button>
-            <button type="button" (click)="fecharModal()">Cancelar</button>
-          </div>
-        </form>
-      </div>
+
+        <div class="modal-actions">
+          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="button" (click)="fecharModal()">Cancelar</button>
+        </div>
+      </form>
     </div>
   </div>
-  

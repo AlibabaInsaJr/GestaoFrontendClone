@@ -338,7 +338,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const msg = typeof err?.status !== 'undefined'
       ? `${tipo}: erro ${err.status}`
       : `${tipo}: erro desconhecido`;
-    this.loadErrors.push(msg);
+          this.loadErrors.push(msg);
   }
 
   private carregarAtividadesRecentes(): void {
@@ -361,9 +361,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       })
     ).subscribe((historico: any[]) => {
       if (historico && historico.length) {
-        this.distributionByAction = this.buildDistributionByHistorico(historico);
-        this.updateCharts();
-
         // Mapear da projeção do backend para o modelo de Activity
         // HistoricoEventoProjection: equipamentoId, dataEvento, tipoEvento, eventoId
         this.recentActivities = historico.slice(0, 10).map((h: any) => ({
@@ -419,29 +416,6 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }));
   }
 
-  private buildDistributionByHistorico(historico: any[]): { label: string; count: number }[] {
-    const counters: Record<string, number> = {
-      ALOCACAO: 0,
-      DEVOLUCAO: 0,
-      REPARACAO: 0,
-      BAIXA: 0,
-      AQUISICAO: 0,
-      OUTROS: 0
-    };
-
-    (historico || []).forEach((item: any) => {
-      const rawType = String(item?.tipoEvento || '').toUpperCase();
-      if (counters[rawType] != null) {
-        counters[rawType] += 1;
-      } else {
-        counters['OUTROS'] += 1;
-      }
-    });
-
-    return this.distributionTypeCatalog
-      .map((item) => ({ label: item.label, count: counters[item.key] || 0 }))
-      .filter((item) => item.count > 0 || item.label !== 'Outros');
-  }
   ngAfterViewInit(): void {
     // Aguardar um pouco mais para garantir que os elementos estão prontos
     setTimeout(() => {
@@ -704,8 +678,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const month = this.calendarCursor.getMonth();
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     this.calendarMonthLabel = `${monthNames[month]} ${year}`;
-
-    const firstDay = new Date(year, month, 1);
+        const firstDay = new Date(year, month, 1);
     const startOffset = firstDay.getDay();
     const startDate = new Date(year, month, 1 - startOffset);
 

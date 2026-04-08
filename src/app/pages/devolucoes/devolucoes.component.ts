@@ -795,7 +795,7 @@ export class DevolucoesComponent implements OnInit {
         console.error('Erro ao abrir PDF em nova aba:', e);
       }
 
-      // Preencher o campo com o File para anexar manualmente se desejar
+      // Preencher o campo com o File para anexar manualmente
       this.form.patchValue({ pathGuiaDevolucao: file });
 
       // Upload automático da guia gerada

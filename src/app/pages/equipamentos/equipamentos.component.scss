@@ -503,3 +503,147 @@ select.ng-invalid.ng-touched {
 .modal.modern-form .ng-select .ng-arrow-wrapper {
   color: #64748b;
 }
+
+/* ===== Novo visual do formulário de Novo Equipamento (sem alterar regras) ===== */
+.equipamentos-page.modal-open {
+  filter: blur(4px);
+  transition: filter 0.2s ease;
+}
+
+.modal-overlay {
+  background: rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 1.5rem;
+  animation: overlayFadeIn 220ms ease-out;
+}
+
+.modal.modern-form {
+  width: min(760px, 96vw);
+  border-radius: 28px;
+  padding: 2.3rem 2.5rem 2rem;
+  border: 1px solid #e6e9f0;
+  box-shadow: 0 30px 65px rgba(15, 23, 42, 0.22);
+  transform-origin: center center;
+  animation: modalPopIn 300ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  h2 {
+    margin: 0 0 1.6rem;
+    font-size: clamp(1.7rem, 2vw, 2.2rem);
+    font-weight: 700;
+    color: #2e3460;
+  }
+
+  form {
+    gap: 1.3rem;
+  }
+
+  .form-grid {
+    gap: 1rem 1.2rem;
+
+    > div {
+      label {
+        margin-bottom: 0.45rem;
+        font-weight: 700;
+        color: #28315d;
+        font-size: 1.05rem;
+      }
+
+      input {
+        min-height: 52px;
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        border: 1px solid #cfd5e3;
+        background: #f9fbff;
+        color: #455174;
+      }
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .ng-select.ng-select-single .ng-select-container {
+    min-height: 52px;
+    border-radius: 10px;
+    border: 1px solid #cfd5e3;
+    background: #f9fbff;
+  }
+
+  .ng-select .ng-placeholder,
+  .ng-select .ng-value {
+    color: #65708f;
+    font-size: 1rem;
+  }
+
+  .modal-actions {
+    margin-top: 0.25rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.9rem;
+
+    button {
+      min-height: 54px;
+      border-radius: 10px;
+      font-size: 1.08rem;
+      font-weight: 700;
+    }
+
+    button[type='submit'] {
+      background: linear-gradient(90deg, #6656ea 0%, #7165f6 100%);
+      color: #ffffff;
+      box-shadow: 0 10px 24px rgba(102, 86, 234, 0.32);
+    }
+
+    button[type='submit']:hover:not(:disabled) {
+      filter: brightness(0.98);
+    }
+
+    button[type='button'] {
+      min-width: 150px;
+      background: #eef1f7;
+      color: #344257;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .modal.modern-form {
+    padding: 1.2rem;
+    border-radius: 18px;
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-actions {
+      grid-template-columns: 1fr;
+
+      button[type='button'] {
+        min-width: 100%;
+      }
+    }
+  }
+}
+
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

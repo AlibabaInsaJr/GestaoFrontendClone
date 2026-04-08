@@ -1,18 +1,18 @@
-<div class="equipamentos-page">
+<div class="equipamentos-page" [class.modal-open]="showModal">
   <!-- Header -->
-   <h1>Marcas</h1>
+  <h1>Marcas</h1>
 
-    <!-- Filtros -->
-    <div class="filtros">
-      <ng-select [items]="marcas" bindLabel="nome" bindValue="nome" [(ngModel)]="filtroNome" placeholder="Marca" [clearable]="true"></ng-select>
+  <!-- Filtros -->
+  <div class="filtros">
+    <ng-select [items]="marcas" bindLabel="nome" bindValue="nome" [(ngModel)]="filtroNome" placeholder="Marca" [clearable]="true"></ng-select>
 
-      <button class="novo-btn" (click)="abrirModal(true)">
-        <i class="fas fa-plus"></i> Nova Marca
-      </button>
-    </div>
-  
-    <!-- Tabela -->
-    <div class="tabela-wrapper">
+    <button class="novo-btn" (click)="abrirModal(true)">
+      <i class="fas fa-plus"></i> Nova Marca
+    </button>
+  </div>
+
+  <!-- Tabela -->
+  <div class="tabela-wrapper">
     <table>
       <thead>
         <tr>
@@ -41,36 +41,33 @@
         </tr>
       </tbody>
     </table>
-    </div>
-  
-    <!-- Modal -->
-    <div class="modal-overlay" *ngIf="showModal">
-      <div class="modal">
-        <h2>{{ editando ? 'Editar' : 'Nova' }} Marca</h2>
-        <div class="modal-banner">
-          <img src="assets/MarcasModelos.png" alt="Marcas e Modelos" />
-        </div>
-        <form [formGroup]="form" (ngSubmit)="salvar()">
-          <div class="form-grid">
-            <div>
-                <label>Nome: *</label>
-                <input type="text" formControlName="nome" />
-                <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
-            </div>
-
-            <div>
-                <label>Data de Registo: *</label>
-                <input type="date" formControlName="dataRegisto" />
-                <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
-            </div>
-
-          </div>
-  
-          <div class="modal-actions">
-            <button type="submit" [disabled]="form.invalid">Salvar</button>
-            <button type="button" (click)="fecharModal()">Cancelar</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal modern-form">
+    <h2>{{ editando ? 'Editar' : 'Nova' }} Marca</h2>
+
+    <form [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="form-grid">
+        <div>
+          <label>Nome: *</label>
+          <input type="text" formControlName="nome" />
+          <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
+        </div>
+
+        <div>
+          <label>Data de Registo: *</label>
+          <input type="date" formControlName="dataRegisto" />
+          <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="submit" [disabled]="form.invalid">Salvar</button>
+        <button type="button" (click)="fecharModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>

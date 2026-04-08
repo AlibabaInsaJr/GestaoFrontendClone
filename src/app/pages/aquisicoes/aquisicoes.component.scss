@@ -376,3 +376,26 @@ select.ng-invalid.ng-touched {
 .equipamentos-page .filtros .ng-select .ng-placeholder { color: #1f2937; font-size: 0.95rem; }
 .equipamentos-page .filtros .ng-select .ng-arrow-wrapper,
 .equipamentos-page .filtros .ng-select .ng-clear-wrapper { color: #64748b; }
+
+/* ===== Padronização visual com Equipamentos/Tipos ===== */
+.modal-overlay {
+  background: rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 1.5rem;
+  animation: overlayFadeIn 220ms ease-out;
+}
+.modal.modern-form {
+  width: min(760px, 95vw);
+  border-radius: 24px;
+  border: 1px solid #e6e9f0;
+  box-shadow: 0 30px 65px rgba(15, 23, 42, 0.22);
+  animation: modalPopIn 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 1.6rem 1.8rem;
+}
+.modal.modern-form .form-grid { max-width: 640px; width: 100%; margin: 0 auto; gap: 0.85rem 0.95rem; }
+.modal.modern-form .modal-actions { max-width: 640px; width: 100%; margin: 0 auto; }
+.modal.modern-form .form-grid div input,
+.modal.modern-form .form-grid .ng-select .ng-select-container { min-height: 42px; }
+@keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalPopIn { from { opacity: 0; transform: translateY(14px) scale(0.96);} to { opacity: 1; transform: translateY(0) scale(1);} }

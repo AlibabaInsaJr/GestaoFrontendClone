@@ -238,4 +238,4 @@ export class AquisicoesComponent implements OnInit {
   onFileError(error: string): void {
     console.error('Erro no upload do arquivo:', error);
   }
-}
+}9

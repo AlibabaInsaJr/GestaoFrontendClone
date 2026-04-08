@@ -52,7 +52,7 @@
 
   <!-- Modal de criação/edição -->
   <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal">
+    <div class="modal modern-form">
       <h2>{{ editando ? 'Editar' : 'Nova' }} Reparação</h2>
 
       <form [formGroup]="form" (ngSubmit)="salvar()">

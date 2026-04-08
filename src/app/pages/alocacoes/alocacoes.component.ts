@@ -517,8 +517,7 @@ export class AlocacoesComponent implements OnInit {
   filtrarUtilizadores() {
     console.log('Filtrando utilizadores com busca:', this.utilizadorBusca);
     console.log('Lista de utilizadores disponíveis:', this.utilizadores);
-    
-    if (!this.utilizadores || this.utilizadores.length === 0) {
+        if (!this.utilizadores || this.utilizadores.length === 0) {
       console.log('Lista de utilizadores vazia');
       this.utilizadoresFiltrados = [];
       return;
@@ -1038,7 +1037,7 @@ export class AlocacoesComponent implements OnInit {
           } else {
             // Caso a API não devolva o caminho, manter o File local para anexar manualmente
             this.form.patchValue({ pathGuiaRecepcao: file });
-            this.notificationService.showWarning('Guia foi gerada, mas o upload automático falhou. Pode anexar manualmente.');
+                        this.notificationService.showWarning('Guia foi gerada, mas o upload automático falhou. Pode anexar manualmente.');
           }
           this.guiaGerada = true; // mesmo com erro de upload, permitir que o usuário salve
         },

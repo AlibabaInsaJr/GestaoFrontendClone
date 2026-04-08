@@ -1,5 +1,5 @@
-<h1>Modelos</h1>
-<div class="equipamentos-page">
+<div class="equipamentos-page" [class.modal-open]="showModal">
+  <h1>Modelos</h1>
 
   <!-- Filtros -->
   <div class="filtros">
@@ -42,40 +42,38 @@
       </tbody>
     </table>
   </div>
+</div>
 
-  <!-- Modal -->
-  <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal">
-        <h2>{{ editando ? 'Editar' : 'Novo' }} Modelo</h2>
-        <div class="modal-banner">
-          <img src="assets/MarcasModelos.png" alt="Marcas e Modelos" />
-        </div>
-        <form [formGroup]="form" (ngSubmit)="salvar()">
-          <div class="form-grid">
-          <div>
-            <label>Nome: *</label>
-            <input type="text" formControlName="nome" />
-            <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
-          </div>
+<!-- Modal -->
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal modern-form">
+    <h2>{{ editando ? 'Editar' : 'Novo' }} Modelo</h2>
 
-          <div>
-            <label>Data de Registo: *</label>
-            <input type="date" formControlName="dataRegisto" />
-            <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
-          </div>
-
-          <div>
-            <label>Marca: *</label>
-            <ng-select [items]="marcas" bindLabel="nome" bindValue="id" formControlName="marcaId" placeholder="Selecione" [clearable]="true"></ng-select>
-            <small *ngIf="form.get('marcaId')?.touched && form.get('marcaId')?.invalid" class="erro">Obrigatório</small>
-          </div>
+    <form [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="form-grid">
+        <div>
+          <label>Nome: *</label>
+          <input type="text" formControlName="nome" />
+          <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
         </div>
 
-        <div class="modal-actions">
-          <button type="submit" [disabled]="form.invalid">Salvar</button>
-          <button type="button" (click)="fecharModal()">Cancelar</button>
+        <div>
+          <label>Data de Registo: *</label>
+          <input type="date" formControlName="dataRegisto" />
+          <small *ngIf="form.get('dataRegisto')?.touched && form.get('dataRegisto')?.invalid" class="erro">Obrigatório</small>
         </div>
-      </form>
-    </div>
+
+        <div class="full-width">
+          <label>Marca: *</label>
+          <ng-select [items]="marcas" bindLabel="nome" bindValue="id" formControlName="marcaId" placeholder="Selecione" [clearable]="true"></ng-select>
+          <small *ngIf="form.get('marcaId')?.touched && form.get('marcaId')?.invalid" class="erro">Obrigatório</small>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="submit" [disabled]="form.invalid">Salvar</button>
+        <button type="button" (click)="fecharModal()">Cancelar</button>
+      </div>
+    </form>
   </div>
 </div>
