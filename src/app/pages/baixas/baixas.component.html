@@ -1,9 +1,7 @@
-<h1>Baixas de Património</h1>
-
 <div class="equipamentos-page">
-  <!-- Filtros -->
+  <h1>Baixas de Património</h1>
+
   <div class="filtros">
-    <!-- Filtros modernos com ng-select, estáticos acima da tabela -->
     <ng-select
       [items]="utilizadores"
       bindLabel="nome"
@@ -27,7 +25,6 @@
     </button>
   </div>
 
-  <!-- Tabela -->
   <div class="tabela-wrapper">
     <table>
       <thead>
@@ -55,14 +52,13 @@
     </table>
   </div>
 
-  <!-- Modal -->
   <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal">
+    <div class="modal modern-form">
       <h2>{{ editando ? 'Editar' : 'Nova' }} Baixa</h2>
 
       <form [formGroup]="form" (ngSubmit)="salvar()">
         <div class="form-grid">
-          <div>
+          <div class="form-field">
             <label>Entregador: *</label>
             <ng-select
               formControlName="utilizadorEntregouId"
@@ -75,7 +71,7 @@
             <small *ngIf="form.get('utilizadorEntregouId')?.touched && form.get('utilizadorEntregouId')?.invalid" class="erro">Obrigatório</small>
           </div>
 
-          <div>
+          <div class="form-field">
             <label>Recebedor: *</label>
             <ng-select
               formControlName="utilizadorRecebeuId"
@@ -88,42 +84,66 @@
             <small *ngIf="form.get('utilizadorRecebeuId')?.touched && form.get('utilizadorRecebeuId')?.invalid" class="erro">Obrigatório</small>
           </div>
 
-          <div>
-            <label>Data:</label>
+          <div class="form-field">
+            <label>Data da Baixa: *</label>
             <input type="date" formControlName="dataBaixa" />
             <small *ngIf="form.get('dataBaixa')?.touched && form.get('dataBaixa')?.invalid" class="erro">Obrigatório</small>
           </div>
 
-          <div>
-            <label>Estado da Baixa: *</label>
-            <ng-select
-              formControlName="novoEstado"
-              [items]="estadosBaixa"
-              placeholder="Selecione o Estado"
-              [clearable]="false">
-            </ng-select>
-            <small *ngIf="form.get('novoEstado')?.touched && form.get('novoEstado')?.invalid" class="erro">Obrigatório</small>
+          <div class="form-field">
+            <label>Estado padrão (opcional)</label>
+            <div class="estado-global-wrap">
+              <ng-select
+                [items]="estadosBaixa"
+                [(ngModel)]="estadoGlobalSelecionado"
+                [ngModelOptions]="{ standalone: true }"
+                placeholder="Selecione o estado padrão"
+                [clearable]="true">
+              </ng-select>
+              <button type="button" class="btn-aplicar-estado" (click)="aplicarEstadoGlobal()" [disabled]="!estadoGlobalSelecionado || selectedEquipamentos.length === 0">
+                Aplicar nos selecionados
+              </button>
+            </div>
           </div>
 
-          <div>
-            <label>Equipamentos para Baixa:</label>
+          <div class="form-field full-width equipamentos-section">
+            <label>Equipamentos para Baixa: *</label>
             <div class="equipamento-lista">
-              <label *ngFor="let eq of equipamentos" class="equipamento-item">
-                <input
-                  type="checkbox"
-                  [value]="eq.numeroSerie"
-                  [checked]="selectedEquipamentos.includes(eq.numeroSerie)"
-                  (change)="toggleEquipamentoSelecionado(eq.numeroSerie, $event)"
-                />
-                <span>{{ eq.numeroSerie }} - {{ getModeloNome(eq.modeloId) }}</span>
-              </label>
+              <div *ngFor="let eq of equipamentos" class="equipamento-item">
+                <div class="equipamento-info">
+                  <input
+                    type="checkbox"
+                    [value]="eq.numeroSerie"
+                    [checked]="selectedEquipamentos.includes(eq.numeroSerie)"
+                    (change)="toggleEquipamentoSelecionado(eq.numeroSerie, $event)"
+                  />
+                  <span>{{ eq.numeroSerie }} - {{ getModeloNome(eq.modeloId) }}</span>
+                </div>
+
+                <div class="equipamento-estado" *ngIf="selectedEquipamentos.includes(eq.numeroSerie)">
+                  <label>Estado deste equipamento</label>
+                  <ng-select
+                    [items]="estadosBaixa"
+                    [ngModel]="estadoPorEquipamento[eq.numeroSerie]"
+                    (ngModelChange)="alterarEstadoEquipamento(eq.numeroSerie, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Selecione o estado"
+                    [clearable]="false">
+                  </ng-select>
+                </div>
+              </div>
             </div>
-            <p><strong>Selecionados:</strong> {{ selectedEquipamentos.length }}</p>
+
+            <p class="selecionados"><strong>Selecionados:</strong> {{ selectedEquipamentos.length }}</p>
+            <small *ngIf="equipamentosObrigatorioInvalido" class="erro">Selecione pelo menos um equipamento.</small>
+            <small *ngIf="estadoEquipamentosInvalido" class="erro">Defina o estado de baixa para todos os equipamentos selecionados.</small>
           </div>
         </div>
 
         <div class="modal-actions">
-          <button type="submit" [disabled]="form.invalid">Salvar</button>
+          <button type="submit" [disabled]="form.invalid || selectedEquipamentos.length === 0 || estadoEquipamentosInvalido">
+            Salvar
+          </button>
           <button type="button" (click)="fecharModal()">Cancelar</button>
         </div>
       </form>

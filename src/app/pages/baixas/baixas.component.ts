@@ -1,4 +1,3 @@
-// src/app/pages/baixas/baixas.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -9,6 +8,7 @@ import { ItemBaixaService } from '../../services/item-baixa.service';
 import { EquipamentoService } from '../../services/equipamento.service';
 import { UtilizadorService } from '../../services/utilizador.service';
 import { ItemsDevolucaoService } from '../../services/item-devolucao.service';
+import { NotificationService } from '../../components/notification/notification.service';
 
 @Component({
   standalone: true,
@@ -22,12 +22,14 @@ export class BaixasComponent implements OnInit {
   equipamentos: any[] = [];
   modelos: any[] = [];
   utilizadores: any[] = [];
+
   selectedEquipamentos: string[] = [];
+  estadoPorEquipamento: Record<string, string> = {};
+  estadoGlobalSelecionado: string | null = null;
 
-  filtroUtilizador: number | null = null; // Quem entregou
-  filtroRecebedor: number | null = null; // Quem recebeu
+  filtroUtilizador: number | null = null;
+  filtroRecebedor: number | null = null;
 
-  // Estados disponíveis para "Estado da Baixa"
   estadosBaixa: string[] = [
     'BAIXADO',
     'PERDIDO',
@@ -39,6 +41,7 @@ export class BaixasComponent implements OnInit {
   showModal = false;
   editando = false;
   baixaSelecionadaId: number | null = null;
+  tentouSubmeter = false;
 
   constructor(
     private fb: FormBuilder,
@@ -46,13 +49,13 @@ export class BaixasComponent implements OnInit {
     private itemBaixaService: ItemBaixaService,
     private equipamentoService: EquipamentoService,
     private utilizadorService: UtilizadorService,
-    private itemsDevolucaoService: ItemsDevolucaoService
+    private itemsDevolucaoService: ItemsDevolucaoService,
+    private notificationService: NotificationService
   ) {
     this.form = this.fb.group({
       utilizadorEntregouId: [null, Validators.required],
       utilizadorRecebeuId: [null, Validators.required],
-      dataBaixa: ['', Validators.required],
-      novoEstado: ['BAIXADO', Validators.required]
+      dataBaixa: ['', Validators.required]
     });
   }
 
@@ -67,10 +70,10 @@ export class BaixasComponent implements OnInit {
   carregarBaixas(): void {
     this.baixasService.listar().subscribe({
       next: (dados) => {
-        this.baixas = dados;
-        this.baixas.forEach(b => {
+        this.baixas = dados || [];
+        this.baixas.forEach((b) => {
           this.itemBaixaService.listarPorBaixa(b.id).subscribe({
-            next: (itens) => b.itens = itens
+            next: (itens) => (b.itens = itens)
           });
         });
       },
@@ -80,14 +83,14 @@ export class BaixasComponent implements OnInit {
 
   carregarEquipamentos(): void {
     this.equipamentoService.listarEquipamentos().subscribe({
-      next: (dados) => this.equipamentos = dados.filter(e => e.estado !== 'ALOCADO'),
+      next: (dados) => (this.equipamentos = (dados || []).filter((e) => e.estado !== 'ALOCADO')),
       error: (erro) => console.error('Erro ao buscar equipamentos:', erro)
     });
   }
 
   carregarModelos(): void {
     this.equipamentoService.listarModelos().subscribe({
-      next: (dados) => this.modelos = dados,
+      next: (dados) => (this.modelos = dados || []),
       error: (erro) => console.error('Erro ao buscar modelos:', erro)
     });
   }
@@ -95,8 +98,7 @@ export class BaixasComponent implements OnInit {
   carregarUtilizadores(): void {
     this.utilizadorService.listar().subscribe({
       next: (dados) => {
-        this.utilizadores = dados;
-        // Definir recebedor padrão como o primeiro utilizador disponível, se existir
+        this.utilizadores = dados || [];
         const primeiroId = this.utilizadores.length ? this.utilizadores[0].id : null;
         this.form.get('utilizadorRecebeuId')?.setValue(primeiroId);
       },
@@ -104,101 +106,134 @@ export class BaixasComponent implements OnInit {
     });
   }
 
-  abrirModal(novo = true, baixa?: any) {
+  abrirModal(novo = true, baixa?: any): void {
     this.editando = !novo;
     this.showModal = true;
     this.selectedEquipamentos = [];
+    this.estadoPorEquipamento = {};
+    this.estadoGlobalSelecionado = null;
+    this.tentouSubmeter = false;
 
     if (novo) {
       this.baixaSelecionadaId = null;
       this.form.reset();
-      // manter valores padrão
-      this.form.get('novoEstado')?.setValue('BAIXADO');
-      // recebedor será definido após carregarUtilizadores()
-    } else {
+      this.form.get('utilizadorRecebeuId')?.setValue(this.utilizadores.length ? this.utilizadores[0].id : null);
+    } else if (baixa) {
       this.baixaSelecionadaId = baixa.id;
       this.form.patchValue({
         utilizadorEntregouId: baixa.utilizadorEntregouId,
         utilizadorRecebeuId: baixa.utilizadorRecebeuId || this.form.get('utilizadorRecebeuId')?.value,
-        dataBaixa: baixa.dataBaixa,
-        novoEstado: 'BAIXADO'
+        dataBaixa: baixa.dataBaixa
       });
 
       this.itemBaixaService.listarPorBaixa(baixa.id).subscribe({
         next: (itens) => {
-          this.selectedEquipamentos = itens.map(item => {
-            const eq = this.equipamentos.find(e => e.id === item.equipamentoId);
-            return eq ? eq.numeroSerie : '';
-          }).filter(ns => ns !== '');
+          this.selectedEquipamentos = (itens || [])
+            .map((item: any) => {
+              const eq = this.equipamentos.find((e) => e.id === item.equipamentoId);
+              if (!eq) return '';
+              this.estadoPorEquipamento[eq.numeroSerie] = item.novoEstado || 'BAIXADO';
+              return eq.numeroSerie;
+            })
+            .filter((ns: string) => ns !== '');
+
+          // tenta identificar um "estado global" se todos os selecionados tiverem mesmo estado
+          const estados = this.selectedEquipamentos.map(ns => this.estadoPorEquipamento[ns]).filter(Boolean);
+          const unicos = Array.from(new Set(estados));
+          this.estadoGlobalSelecionado = unicos.length === 1 ? unicos[0] : null;
         }
       });
     }
   }
 
-  fecharModal() {
+  fecharModal(): void {
     this.showModal = false;
     this.form.reset();
     this.baixaSelecionadaId = null;
+    this.selectedEquipamentos = [];
+    this.estadoPorEquipamento = {};
+    this.estadoGlobalSelecionado = null;
+    this.tentouSubmeter = false;
   }
 
-  toggleEquipamentoSelecionado(numeroSerie: string, event: any) {
+  toggleEquipamentoSelecionado(numeroSerie: string, event: any): void {
     if (event.target.checked) {
       if (!this.selectedEquipamentos.includes(numeroSerie)) {
         this.selectedEquipamentos.push(numeroSerie);
       }
+
+      // usa estado global se houver, senão inicia vazio para obrigar escolha
+      if (!this.estadoPorEquipamento[numeroSerie]) {
+        this.estadoPorEquipamento[numeroSerie] = this.estadoGlobalSelecionado || '';
+      }
     } else {
-      this.selectedEquipamentos = this.selectedEquipamentos.filter(ns => ns !== numeroSerie);
+      this.selectedEquipamentos = this.selectedEquipamentos.filter((ns) => ns !== numeroSerie);
+      delete this.estadoPorEquipamento[numeroSerie];
     }
   }
 
+  alterarEstadoEquipamento(numeroSerie: string, estado: string): void {
+    this.estadoPorEquipamento[numeroSerie] = estado;
+  }
+
+  aplicarEstadoGlobal(): void {
+    if (!this.estadoGlobalSelecionado) return;
+    this.selectedEquipamentos.forEach((ns) => {
+      this.estadoPorEquipamento[ns] = this.estadoGlobalSelecionado as string;
+    });
+  }
+
   getNomeUtilizador(id: number): string {
-    const u = this.utilizadores.find(u => u.id === id);
+    const u = this.utilizadores.find((x) => x.id === id);
     return u ? u.nome : `ID ${id}`;
   }
 
   getModeloNome(id: number): string {
-    const m = this.modelos.find(m => m.id === id);
+    const m = this.modelos.find((x) => x.id === id);
     return m ? m.nome : `Modelo ${id}`;
   }
 
-  getBaixasFiltradas() {
-    return this.baixas.filter(b => {
+  getBaixasFiltradas(): any[] {
+    return (this.baixas || []).filter((b) => {
       const filtroEntregouOk = !this.filtroUtilizador || b.utilizadorEntregouId === this.filtroUtilizador;
       const filtroRecebeuOk = !this.filtroRecebedor || b.utilizadorRecebeuId === this.filtroRecebedor;
       return filtroEntregouOk && filtroRecebeuOk;
     });
   }
 
-  excluir(id: number) {
-    if (!confirm('Tem certeza que deseja remover esta baixa?')) {
-      return;
-    }
+  get equipamentosObrigatorioInvalido(): boolean {
+    return this.tentouSubmeter && this.selectedEquipamentos.length === 0;
+  }
 
-    // Remover primeiro todos os itens associados; depois remover a baixa.
+  get estadoEquipamentosInvalido(): boolean {
+    if (!this.tentouSubmeter || this.selectedEquipamentos.length === 0) return false;
+    return this.selectedEquipamentos.some((ns) => !this.estadoPorEquipamento[ns]);
+  }
+
+  excluir(id: number): void {
+    if (!confirm('Tem certeza que deseja remover esta baixa?')) return;
+
     this.itemBaixaService.listarPorBaixa(id).subscribe({
       next: (itens) => {
         const removerSequencialmente = (index: number) => {
-          if (index >= itens.length) {
-            // Após remover itens, remover a baixa
+          if (index >= (itens || []).length) {
             this.baixasService.remover(id).subscribe({
               next: () => {
-                this.baixas = this.baixas.filter(b => b.id !== id);
-                alert('Baixa removida com sucesso.');
+                this.baixas = this.baixas.filter((b) => b.id !== id);
+                this.notificationService.showSuccess('Baixa removida com sucesso.');
               },
               error: (err) => {
                 console.error('Erro ao remover baixa:', err);
-                alert('Não foi possível remover a baixa.');
+                this.notificationService.showError('Não foi possível remover a baixa.');
               }
             });
             return;
           }
 
-          const item = itens[index];
-          this.itemBaixaService.remover(item.id).subscribe({
+          this.itemBaixaService.remover(itens[index].id).subscribe({
             next: () => removerSequencialmente(index + 1),
             error: (err) => {
               console.error('Erro ao remover item de baixa:', err);
-              // Continua tentando remover os demais itens para maximizar a limpeza
               removerSequencialmente(index + 1);
             }
           });
@@ -208,13 +243,29 @@ export class BaixasComponent implements OnInit {
       },
       error: (err) => {
         console.error('Erro ao carregar itens para remoção da baixa:', err);
-        alert('Não foi possível carregar os itens associados. A remoção foi cancelada.');
+        this.notificationService.showError('Não foi possível carregar os itens associados. A remoção foi cancelada.');
       }
     });
   }
 
-  salvar() {
-    if (this.form.invalid) return;
+  salvar(): void {
+    this.tentouSubmeter = true;
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.notificationService.showWarning('Preencha os campos obrigatórios antes de salvar.');
+      return;
+    }
+
+    if (this.selectedEquipamentos.length === 0) {
+      this.notificationService.showWarning('Selecione pelo menos um equipamento para a baixa.');
+      return;
+    }
+
+    if (this.selectedEquipamentos.some((ns) => !this.estadoPorEquipamento[ns])) {
+      this.notificationService.showWarning('Defina o estado de baixa para cada equipamento selecionado.');
+      return;
+    }
 
     const dados = this.form.value;
     if (!dados.utilizadorRecebeuId && this.utilizadores.length) {
@@ -225,8 +276,8 @@ export class BaixasComponent implements OnInit {
       this.itemBaixaService.listarPorBaixa(baixaId).subscribe({
         next: (existentes) => {
           const removerSeq = (i: number) => {
-            if (i >= existentes.length) {
-              this.criarItensBaixa(baixaId, dados.novoEstado);
+            if (i >= (existentes || []).length) {
+              this.criarItensBaixa(baixaId);
               return;
             }
             this.itemBaixaService.remover(existentes[i].id).subscribe({
@@ -238,81 +289,92 @@ export class BaixasComponent implements OnInit {
         },
         error: (err) => {
           console.error('Erro ao listar itens de baixa para sincronização:', err);
-          this.criarItensBaixa(baixaId, dados.novoEstado);
+          this.criarItensBaixa(baixaId);
         }
       });
     };
 
     if (this.editando && this.baixaSelecionadaId) {
-      this.baixasService.atualizar(this.baixaSelecionadaId, {
-        utilizadorEntregouId: dados.utilizadorEntregouId,
-        utilizadorRecebeuId: dados.utilizadorRecebeuId,
-        dataBaixa: dados.dataBaixa
-      }).subscribe({
-        next: () => criarOuAtualizarItens(this.baixaSelecionadaId!),
-        error: (err) => {
-          console.error('Erro ao atualizar baixa:', err);
-          alert('Erro ao atualizar a baixa');
-        }
-      });
+      this.baixasService
+        .atualizar(this.baixaSelecionadaId, {
+          utilizadorEntregouId: dados.utilizadorEntregouId,
+          utilizadorRecebeuId: dados.utilizadorRecebeuId,
+          dataBaixa: dados.dataBaixa
+        })
+        .subscribe({
+          next: () => criarOuAtualizarItens(this.baixaSelecionadaId!),
+          error: (err) => {
+            console.error('Erro ao atualizar baixa:', err);
+            this.notificationService.showError('Erro ao atualizar a baixa.');
+          }
+        });
     } else {
-      this.baixasService.criar({
-        utilizadorEntregouId: dados.utilizadorEntregouId,
-        utilizadorRecebeuId: dados.utilizadorRecebeuId,
-        dataBaixa: dados.dataBaixa
-      }).subscribe({
-        next: (baixa) => criarOuAtualizarItens(baixa.id),
-        error: (err) => {
-          console.error('Erro ao criar baixa:', err);
-          alert('Erro ao salvar baixa');
-        }
-      });
+      this.baixasService
+        .criar({
+          utilizadorEntregouId: dados.utilizadorEntregouId,
+          utilizadorRecebeuId: dados.utilizadorRecebeuId,
+          dataBaixa: dados.dataBaixa
+        })
+        .subscribe({
+          next: (baixa) => criarOuAtualizarItens(baixa.id),
+          error: (err) => {
+            console.error('Erro ao criar baixa:', err);
+            this.notificationService.showError('Erro ao salvar baixa.');
+          }
+        });
     }
   }
 
-  private criarItensBaixa(baixaId: number, novoEstado: string) {
+  private criarItensBaixa(baixaId: number): void {
     this.itemsDevolucaoService.listar().subscribe({
       next: (todosItensDev) => {
         const mapaDevPorEquip: Map<number, any[]> = new Map();
-        for (const item of todosItensDev) {
+
+        for (const item of todosItensDev || []) {
           const lista = mapaDevPorEquip.get(item.equipamentoId) || [];
           lista.push(item);
           mapaDevPorEquip.set(item.equipamentoId, lista);
         }
+
         for (const [key, lista] of mapaDevPorEquip.entries()) {
           lista.sort((a, b) => (b.id || 0) - (a.id || 0));
           mapaDevPorEquip.set(key, lista);
         }
 
         const itensPayloads: any[] = [];
+
         for (const ns of this.selectedEquipamentos) {
-          const eq = this.equipamentos.find(e => e.numeroSerie === ns);
+          const eq = this.equipamentos.find((e) => e.numeroSerie === ns);
           if (!eq) continue;
+
           const listaDev = mapaDevPorEquip.get(eq.id) || [];
           const ultimoDev = listaDev[0];
+
           if (!ultimoDev) {
             itensPayloads.push({
               baixaPatrimonioId: baixaId,
               equipamentoId: eq.id,
-              novoEstado
+              novoEstado: this.estadoPorEquipamento[ns]
             });
           } else {
             itensPayloads.push({
               baixaPatrimonioId: baixaId,
               itemsDevolucaoId: ultimoDev.id,
-              novoEstado
+              novoEstado: this.estadoPorEquipamento[ns]
             });
           }
         }
 
         let criados = 0;
         const total = itensPayloads.length;
+
         if (total === 0) {
-          alert('Operação concluída: a baixa ficou sem itens selecionados.');
+          this.notificationService.showInfo('Operação concluída: a baixa ficou sem itens selecionados.');
           this.fecharModal();
           this.carregarBaixas();
           return;
         }
+
         for (const payload of itensPayloads) {
           this.itemBaixaService.criar(payload).subscribe({
             next: () => {
@@ -320,6 +382,7 @@ export class BaixasComponent implements OnInit {
               if (criados === total) {
                 this.fecharModal();
                 this.carregarBaixas();
+                this.notificationService.showSuccess('Baixa salva com sucesso.');
               }
             },
             error: (err) => console.error('Erro ao criar item de baixa:', err)
@@ -328,7 +391,7 @@ export class BaixasComponent implements OnInit {
       },
       error: (err) => {
         console.error('Erro ao carregar itens de devolução:', err);
-        alert('Operação concluída com avisos: não foi possível associar itens de devolução.');
+        this.notificationService.showWarning('Operação concluída com avisos: não foi possível associar itens de devolução.');
         this.fecharModal();
         this.carregarBaixas();
       }
