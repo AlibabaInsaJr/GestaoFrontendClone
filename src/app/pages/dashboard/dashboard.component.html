@@ -155,7 +155,13 @@
           <span class="panel-kicker">Consumíveis</span>
           <h3>Consumíveis (Impressoras)</h3>
         </div>
+        <div class="consumiveis-actions">
+          <button type="button" class="consumiveis-btn success" [disabled]="isSyncingAll" (click)="sincronizarTodasSnmp()">Sincronizar SNMP</button>
+          <button type="button" class="consumiveis-btn" (click)="toggleManualMode()">{{ manualMode ? 'Modo SNMP' : 'Modo manual' }}</button>
+          <button type="button" class="consumiveis-btn" (click)="toggleAutoRefreshSnmp()">{{ autoRefreshSnmp ? 'Auto-refresh ON' : 'Auto-refresh OFF' }}</button>
+        </div>
       </div>
+      <small *ngIf="syncProgressLabel">{{ syncProgressLabel }}</small>
 
       <div class="consumiveis-form">
         <input type="text" placeholder="Referência da impressora" [(ngModel)]="novaImpressora.referencia" />
@@ -180,7 +186,14 @@
               <strong>{{ printer.referencia }}</strong>
               <span>{{ printer.enderecoIp }}</span>
             </div>
+            <small>Status:
+              <b *ngIf="printer.syncStatus === 'SUCCESS'">ONLINE/SINCRONIZADA</b>
+              <b *ngIf="printer.syncStatus === 'ERROR'">FALHA</b>
+              <b *ngIf="!printer.enderecoIp">SEM IP</b>
+            </small>
+            <small *ngIf="printer.lastSyncAt">Última atualização: {{ printer.lastSyncAt | date:'dd/MM/yyyy HH:mm:ss' }}</small>
             <small>{{ printer.localizacao }} • {{ printer.tipo === 'COLORIDA' ? 'Colorida' : 'Preto e Branco' }}</small>
+            <button type="button" class="consumiveis-btn" (click)="sincronizarUmaSnmp(printer)" [disabled]="isSyncingAll || printer.syncStatus === 'LOADING'">Sincronizar esta impressora</button>
 
             <div class="ink-control" *ngFor="let key of getConsumivelKeys(printer)">
               <label>{{ getConsumivelLabel(key) }}: {{ printer.consumiveis[key] || 0 }}%</label>
@@ -189,10 +202,19 @@
                 min="0"
                 max="100"
                 [value]="printer.consumiveis[key] || 0"
+                [disabled]="!manualMode || isSyncingAll || printer.syncStatus === 'LOADING'"
                 (input)="atualizarNivelConsumivel(printer, key, +$any($event.target).value)" />
               <div class="ink-bar">
                 <span [class]="getConsumivelClass(key)" [style.width.%]="printer.consumiveis[key] || 0"></span>
               </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <button type="button" class="consumiveis-btn" (click)="toggleSyncLogs()">{{ showSyncLogs ? 'Ocultar logs' : 'Mostrar logs' }}</button>
+          <div *ngIf="showSyncLogs">
+            <div *ngFor="let p of impressorasConsumiveis">
+              <small>{{ p.referencia }}: {{ p.snmpMessage || 'Sem mensagens' }}</small>
             </div>
           </div>
         </div>

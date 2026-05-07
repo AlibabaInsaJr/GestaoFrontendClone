@@ -42,13 +42,13 @@
 
   <!-- Modal -->
   <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal">
+    <div class="modal modern-form">
       <h2>{{ editando ? 'Editar' : 'Novo ' }} Grupo</h2>
       <form [formGroup]="form" (ngSubmit)="salvar()">
         <div class="form-grid">
-          <div class="form-field">
-            <label>Nome</label>
-            <input type="text" formControlName="nome" class="input-center" />
+          <div class="full-width">
+            <label>Nome:</label>
+            <input type="text" formControlName="nome" />
             <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
           </div>
         </div>

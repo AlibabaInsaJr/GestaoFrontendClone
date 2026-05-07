@@ -75,21 +75,27 @@ export class UtilizadoresComponent implements OnInit {
 
     if (novo) {
       this.selecionadoId = null;
-      this.form.reset();
+      this.form.reset({ gruposIds: [] });
     } else {
       this.selecionadoId = user.id;
-      this.form.patchValue(user);
+      this.form.patchValue({
+        ...user,
+        gruposIds: user.gruposIds || []
+      });
     }
   }
 
   fecharModal() {
-    this.form.reset();
+    this.form.reset({ gruposIds: [] });
     this.showModal = false;
     this.selecionadoId = null;
   }
 
   salvar() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     const dados = this.form.value;
 
     if (this.editando && this.selecionadoId !== null) {

@@ -28,6 +28,7 @@ import {
   ConsumivelImpressoraDto,
   ConsumivelImpressoraPayload,
   ConsumivelImpressoraService,
+  SnmpSyncResult,
   TipoImpressora
 } from '../../services/consumivel-impressora.service';
 import { Subject, forkJoin, interval, of } from 'rxjs';
@@ -59,6 +60,9 @@ interface PrinterSupplyItem {
   localizacao: string;
   enderecoIp: string;
   consumiveis: PrinterConsumables;
+  syncStatus?: 'IDLE' | 'LOADING' | 'SUCCESS' | 'ERROR';
+  lastSyncAt?: Date | null;
+  snmpMessage?: string;
 }
 
 interface RepairReminder {
@@ -134,6 +138,13 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   impressoraSelecionadaId = 1;
+  manualMode = false;
+  autoRefreshSnmp = false;
+  autoRefreshIntervalMin = 5;
+  isSyncingAll = false;
+  syncProgressLabel = '';
+  showSyncLogs = false;
+  private syncLock = false;
   allocationTypes = [
     { label: 'Alocações', count: 0 },
     { label: 'Reparações', count: 0 },
@@ -200,7 +211,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.generateCalendar();
     this.carregarEstatisticas();
     this.carregarAtividadesRecentes();
-    this.carregarConsumiveisImpressoras();
+    this.carregarConsumiveisImpressoras(true);
     this.iniciarSincronizacaoLembretesReparacao();
     this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
     console.log('Dashboard inicializado');
@@ -233,6 +244,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     this.destroyExistingCharts();
+  }
+
+  toggleManualMode(): void { this.manualMode = !this.manualMode; }
+  toggleSyncLogs(): void { this.showSyncLogs = !this.showSyncLogs; }
+  toggleAutoRefreshSnmp(): void {
+    this.autoRefreshSnmp = !this.autoRefreshSnmp;
+    if (this.autoRefreshSnmp) {
+      interval(this.autoRefreshIntervalMin * 60 * 1000).pipe(takeUntil(this.destroy$)).subscribe(() => this.sincronizarTodasSnmp());
+    }
   }
 
   private iniciarSincronizacaoLembretesReparacao(): void {
@@ -783,6 +803,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   atualizarNivelConsumivel(printer: PrinterSupplyItem, key: keyof PrinterConsumables, value: number): void {
+    if (!this.manualMode || this.isSyncingAll || printer.syncStatus === 'LOADING') return;
     printer.consumiveis[key] = this.clampPercent(value);
     const payload = this.toPayload(printer);
     this.consumivelImpressoraService.atualizar(printer.id, payload).subscribe({
@@ -796,6 +817,43 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.markError('consumíveis (atualização)', err);
+      }
+    });
+  }
+
+  sincronizarTodasSnmp(): void {
+    if (this.syncLock) return;
+    this.syncLock = true;
+    this.isSyncingAll = true;
+    this.syncProgressLabel = `Sincronizando ${this.impressorasConsumiveis.length}/${this.impressorasConsumiveis.length}...`;
+    this.consumivelImpressoraService.syncAllSnmp().subscribe({
+      next: (res: SnmpSyncResult) => {
+        this.applySyncResult(res);
+        this.carregarConsumiveisImpressoras();
+      },
+      error: (err) => this.markError('consumíveis (sync lote)', err?.userMessage || err),
+      complete: () => {
+        this.isSyncingAll = false;
+        this.syncLock = false;
+        this.syncProgressLabel = '';
+      }
+    });
+  }
+
+  sincronizarUmaSnmp(printer: PrinterSupplyItem): void {
+    if (this.syncLock || !printer.enderecoIp?.trim()) {
+      if (!printer.enderecoIp?.trim()) printer.snmpMessage = 'SEM IP: cadastre endereço IP para sincronizar.';
+      return;
+    }
+    printer.syncStatus = 'LOADING';
+    this.consumivelImpressoraService.syncOneSnmp(printer.id).subscribe({
+      next: (res) => {
+        this.applySyncResult(res, printer.id);
+        this.carregarConsumiveisImpressoras();
+      },
+      error: (err) => {
+        printer.syncStatus = 'ERROR';
+        printer.snmpMessage = err?.userMessage || 'Falha SNMP.';
       }
     });
   }
@@ -1029,13 +1087,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.renderConsumiveisDetalheChart();
   }
 
-  private carregarConsumiveisImpressoras(): void {
+  private carregarConsumiveisImpressoras(triggerSyncOnInit = false): void {
     this.consumivelImpressoraService.listar().subscribe({
       next: (items: any) => {
         const list = this.normalizeConsumiveisResponse(items);
         this.impressorasConsumiveis = list.map((item) => this.mapDtoToPrinter(item));
         this.impressoraSelecionadaId = this.impressorasConsumiveis[0]?.id || 0;
         this.refreshConsumiveisCharts();
+        if (triggerSyncOnInit) this.sincronizarTodasSnmp();
       },
       error: (err) => {
         this.markError('consumíveis (listagem)', err);
@@ -1070,8 +1129,27 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
         cyan: dto.consumiveis?.cyan == null ? undefined : this.clampPercent(dto.consumiveis.cyan),
         magenta: dto.consumiveis?.magenta == null ? undefined : this.clampPercent(dto.consumiveis.magenta),
         yellow: dto.consumiveis?.yellow == null ? undefined : this.clampPercent(dto.consumiveis.yellow)
-      }
+      },
+      syncStatus: dto.enderecoIp ? 'IDLE' : 'ERROR',
+      lastSyncAt: null,
+      snmpMessage: dto.enderecoIp ? 'Aguardando sincronização SNMP.' : 'SEM IP: sincronização bloqueada.'
     };
+  }
+
+  private applySyncResult(result: SnmpSyncResult, onlyId?: number): void {
+    const byId = new Map<number, any>();
+    (result.results || []).forEach((r: any) => { if (r?.id) byId.set(Number(r.id), r); });
+    this.impressorasConsumiveis = this.impressorasConsumiveis.map((p) => {
+      if (onlyId && p.id !== onlyId) return p;
+      const r = byId.get(p.id);
+      if (!r) return p;
+      return {
+        ...p,
+        syncStatus: r.success ? 'SUCCESS' : 'ERROR',
+        lastSyncAt: new Date(r.timestamp || result.timestamp || new Date().toISOString()),
+        snmpMessage: r.message || result.message
+      };
+    });
   }
 
   private toPayload(printer: PrinterSupplyItem): ConsumivelImpressoraPayload {

@@ -49,12 +49,8 @@
 
   <!-- Modal -->
   <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal">
+    <div class="modal modern-form">
       <h2>{{ editando ? 'Editar' : 'Nova' }} Empresa</h2>
-      <!-- Imagem pequena no topo do formulário quando for Nova Empresa -->
-      <div class="modal-header-graphic" *ngIf="!editando">
-        <img src="assets/empresas.png" alt="Empresas" class="modal-empresa-image" />
-      </div>
       <form [formGroup]="form" (ngSubmit)="salvar()">
         <div class="form-grid">
           <div>

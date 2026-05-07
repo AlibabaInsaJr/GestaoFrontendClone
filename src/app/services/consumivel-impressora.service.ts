@@ -23,6 +23,23 @@ export interface ConsumivelImpressoraDto {
 }
 
 export type ConsumivelImpressoraPayload = Omit<ConsumivelImpressoraDto, 'id'>;
+export type SyncStatus = 'IDLE' | 'LOADING' | 'SUCCESS' | 'ERROR';
+export interface SnmpSyncItemResult {
+  id?: number;
+  referencia?: string;
+  success: boolean;
+  message: string;
+  timestamp?: string;
+}
+export interface SnmpSyncResult {
+  success: boolean;
+  message: string;
+  syncedCount?: number;
+  failedCount?: number;
+  totalCount?: number;
+  timestamp?: string;
+  results?: SnmpSyncItemResult[];
+}
 
 @Injectable({
   providedIn: 'root'
@@ -93,5 +110,26 @@ export class ConsumivelImpressoraService {
       }),
       catchError((error) => throwError(() => error))
     );
+  }
+
+  syncAllSnmp(): Observable<SnmpSyncResult> {
+    return this.http.post<SnmpSyncResult>(`${this.baseUrl}/sync-snmp`, {}).pipe(
+      catchError((error) => this.handleSyncError(error, 'Sincronização SNMP em lote indisponível.'))
+    );
+  }
+
+  syncOneSnmp(id: number): Observable<SnmpSyncResult> {
+    return this.http.post<SnmpSyncResult>(`${this.baseUrl}/${id}/sync-snmp`, {}).pipe(
+      catchError((error) => this.handleSyncError(error, `Falha ao sincronizar impressora ${id}.`))
+    );
+  }
+
+  private handleSyncError(error: any, fallback: string) {
+    let message = fallback;
+    if (error?.status === 0) message = 'Sem conectividade com a API/backend.';
+    else if (error?.status === 404) message = 'Endpoint SNMP não encontrado no backend.';
+    else if (error?.status >= 500) message = 'Erro interno no backend SNMP.';
+    else if (error?.name === 'TimeoutError') message = 'Tempo limite excedido na sincronização SNMP.';
+    return throwError(() => ({ ...error, userMessage: message }));
   }
 }

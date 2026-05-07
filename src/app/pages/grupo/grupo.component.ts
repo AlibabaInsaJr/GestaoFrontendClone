@@ -69,7 +69,10 @@ export class GrupoComponent implements OnInit {
   }
 
   salvar() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
     const dados = this.form.value;
 

@@ -59,62 +59,60 @@
 
   <!-- Modal -->
   <div class="modal-overlay" *ngIf="showModal">
-    <div class="modal">
-      <h2>{{ editando ? 'Editar' : 'Cadastrar' }} Utilizador</h2>
-      <!-- Imagem pequena no topo do formulário quando for Novo Utilizador -->
-      <div class="modal-header-graphic" *ngIf="!editando">
-        <img src="assets/user.png" alt="Utilizador" class="modal-user-image" />
-      </div>
+    <div class="modal modern-form">
+      <h2>{{ editando ? 'Editar' : 'Novo' }} Utilizador</h2>
+
       <form [formGroup]="form" (ngSubmit)="salvar()">
         <div class="form-grid">
-          <div class="form-row">
-            <div class="form-field">
-              <label>Nome</label>
-              <input type="text" formControlName="nome" />
-            </div>
-            <div class="form-field">
-              <label>Email</label>
-              <input type="email" formControlName="email" />
-            </div>
+          <div>
+            <label>Nome:</label>
+            <input type="text" formControlName="nome" />
+            <small *ngIf="form.get('nome')?.touched && form.get('nome')?.invalid" class="erro">Obrigatório</small>
           </div>
-          
-          <div class="form-row">
-            <div class="form-field">
-              <label>Telefone</label>
-              <input type="text" formControlName="telefone" />
-            </div>
-            <div class="form-field">
-              <label>Cargo</label>
-              <input type="text" formControlName="cargo" />
-            </div>
-          </div>
-          
-          <!-- Linha com filtros: Unidade (esquerda) e Grupos (direita) -->
-          <div class="form-row">
-            <div class="form-field">
-              <label>Unidade</label>
-              <ng-select 
-                [items]="unidades"
-                bindLabel="nome"
-                bindValue="id"
-                formControlName="unidadeId"
-                placeholder="Selecione uma unidade"
-                [clearable]="true">
-              </ng-select>
-            </div>
 
-            <div class="form-field">
-              <label>Grupos</label>
-              <ng-select 
-                [items]="grupos"
-                bindLabel="nome"
-                bindValue="id"
-                [multiple]="true"
-                formControlName="gruposIds"
-                placeholder="Selecione grupos"
-                [clearable]="true">
-              </ng-select>
-            </div>
+          <div>
+            <label>Email:</label>
+            <input type="email" formControlName="email" />
+            <small *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="erro">
+              {{ form.get('email')?.errors?.['email'] ? 'Email inválido' : 'Obrigatório' }}
+            </small>
+          </div>
+
+          <div>
+            <label>Telefone:</label>
+            <input type="text" formControlName="telefone" />
+            <small *ngIf="form.get('telefone')?.touched && form.get('telefone')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Cargo:</label>
+            <input type="text" formControlName="cargo" />
+            <small *ngIf="form.get('cargo')?.touched && form.get('cargo')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div>
+            <label>Unidade:</label>
+            <ng-select
+              [items]="unidades"
+              bindLabel="nome"
+              bindValue="id"
+              formControlName="unidadeId"
+              placeholder="Selecione">
+            </ng-select>
+            <small *ngIf="form.get('unidadeId')?.touched && form.get('unidadeId')?.invalid" class="erro">Obrigatório</small>
+          </div>
+
+          <div class="full-width">
+            <label>Grupos:</label>
+            <ng-select
+              [items]="grupos"
+              bindLabel="nome"
+              bindValue="id"
+              [multiple]="true"
+              formControlName="gruposIds"
+              placeholder="Selecione">
+            </ng-select>
+            <small *ngIf="form.get('gruposIds')?.touched && form.get('gruposIds')?.invalid" class="erro">Obrigatório</small>
           </div>
         </div>
 
